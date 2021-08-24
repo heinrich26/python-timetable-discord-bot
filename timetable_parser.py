@@ -1,6 +1,5 @@
 import urllib.request
 from lxml import html
-from bs4 import BeautifulSoup
 from itertools import zip_longest
 
 
@@ -42,7 +41,6 @@ class Page(object):
             self.type: str = None
 
         if self.type is not None:
-            # self.beautify_code()
             self.extract_data(overview)
 
     # die Funktionen für die Websitetypen ausführen
@@ -89,15 +87,6 @@ class Page(object):
                     self.replacements[class_repl] = [replacement]
                 else:
                     self.replacements[class_repl].append(replacement)
-
-    # beautifys the Code, so we don't need to double check caps, etc.
-
-    def beautify_code(self):
-        try:
-            # doesnt work because we dont have self.code anymore
-            self.code = BeautifulSoup(page.code, 'html.parser').prettify()
-        except:
-            pass
 
 
 page = Page(pages['untis-html'][0])
