@@ -20,6 +20,14 @@ async def on_message(msg):
 
     text = msg.content
     if text.startswith('/vplan') or text.startswith('/vertretungsplan') or text.startswith('!vplan') or text.startswith('!vertretungsplan'):
+        args = text.split(' ', 1)
+        if len(args) > 2:
+            await msg.channel.send('**Ungültige Argumente!**\nVersuch mal `!vplan <Klasse>` oder `!vplan help`!')
+            return
+        if len(args) == 2 and args[1] == 'help':
+            await msg.channel.send('**Vertretungsplan Hilfe**\n\nVerwendung: `!vplan <args>`\n`ohne Args` Zeigt den kompletten Plan\n`... help` Zeigt diese Info\n`... <Klasse>` Zeigt den Plan für eine Klasse\n`... klassen`')
+            return
+
         embedded_msg = discord.Embed(title='Vertretungsplan',
                                     description='Hier siehst du deine heutigen Vertretungen')
         replacements = get_replacements()
