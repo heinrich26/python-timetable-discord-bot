@@ -3,8 +3,6 @@ from lxml import html
 from itertools import zip_longest
 
 
-pageAddress = "https://www.lilienthal-gymnasium-berlin.de/interna/vplan/Druck_Kla.htm"
-
 # die Webseitentypen mit bekannten URLs
 pages = {
     'untis-html': ["https://www.lilienthal-gymnasium-berlin.de/interna/vplan/Druck_Kla.htm"]
@@ -17,7 +15,7 @@ untis_html_keys = ('lesson', 'teacher', 'subject', 'replacing_teacher', 'room',
 
 
 class Page(object):
-    def __init__(self, url: str = pageAddress, overview=True):
+    def __init__(self, url: str = pages['untis-html'][0], overview=True):
         self.url = url
         # url abfragen, Code holen!
         webPage = urllib.request.urlopen(url)
@@ -88,7 +86,15 @@ class Page(object):
                 else:
                     self.replacements[class_repl].append(replacement)
 
+# returns all the replacements for the day
+def get_replacements(url: str = pages['untis-html'][0]) -> dict:
+    try:
+        page = Page(url)
+        return  page.replacements
+    except:
+        return None
 
-page = Page(pages['untis-html'][0])
+if __name__ == '__main__':
+    page = Page(pages['untis-html'][0])
 
-print(page.replacements)
+    print(page.replacements)
