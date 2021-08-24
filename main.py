@@ -27,8 +27,8 @@ async def on_message(msg):
         if len(args) == 2 and args[1] == 'help':
             help_embed = discord.Embed(title='**Vertretungsplan Hilfe**',
                                         description='Hier findest du alle wichtigen Commands für den Vertretungsplan!')
-            help_embed.add_field(name='**Verwendung:** `!vplan [Optionen]`'
-                                    description='`ohne Args` Zeigt den kompletten Plan\n`... help` Zeigt diese Info\n`... <Klasse>` Zeigt den Plan für eine Klasse\n`... klassen` Zeigt alle Klassen die heute Vertretung haben')
+            help_embed.add_field('**Verwendung:** `!vplan [Optionen]`'
+                                    `ohne Args` Zeigt den kompletten Plan\n`... help` Zeigt diese Info\n`... <Klasse>` Zeigt den Plan für eine Klasse\n`... klassen` Zeigt alle Klassen die heute Vertretung haben')
             await msg.channel.send(embed=help_embed)
             return
 
