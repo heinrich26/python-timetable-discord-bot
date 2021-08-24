@@ -16,4 +16,7 @@ async def on_message(msg):
     if text.startswith('/vplan'):
         await msg.channel.send('Dein Vertretungsplan:')
 
-client.run(os.environ['BOT_TOKEN'] if 'BOT_TOKEN' in os.environ else open('token_secret', 'r').readlines()[0])
+try:
+    client.run(os.environ['BOT_TOKEN'] if 'BOT_TOKEN' in os.environ else open('token_secret', 'r').readlines()[0])
+except:
+    print("error")
