@@ -25,7 +25,11 @@ async def on_message(msg):
             await msg.channel.send('**Ungültige Argumente!**\nVersuch mal `!vplan <Klasse>` oder `!vplan help`!')
             return
         if len(args) == 2 and args[1] == 'help':
-            await msg.channel.send('**Vertretungsplan Hilfe**\n\nVerwendung: `!vplan <args>`\n`ohne Args` Zeigt den kompletten Plan\n`... help` Zeigt diese Info\n`... <Klasse>` Zeigt den Plan für eine Klasse\n`... klassen`')
+            help_embed = discord.Embed(title='**Vertretungsplan Hilfe**',
+                                        description='Hier findest du alle wichtigen Commands für den Vertretungsplan!')
+            help_embed.add_field(name='**Verwendung:** `!vplan [Optionen]`'
+                                    description='`ohne Args` Zeigt den kompletten Plan\n`... help` Zeigt diese Info\n`... <Klasse>` Zeigt den Plan für eine Klasse\n`... klassen` Zeigt alle Klassen die heute Vertretung haben')
+            await msg.channel.send(embed=help_embed)
             return
 
         embedded_msg = discord.Embed(title='Vertretungsplan',
