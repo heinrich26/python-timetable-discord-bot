@@ -6,6 +6,8 @@ empty_field = {'name': '\u200b', 'value': '\u200b', 'inline': False}
 
 default_footer = {'text': 'Alle Angaben ohne Gewähr! '}
 
+invite_link = 'https://discord.com/api/oauth2/authorize?client_id=489087343589064704&permissions=268594240&scope=bot'
+
 def mk_field(name='\u200b', value='\200b', inline: bool=True) -> dict:
     return {'name': name if name else '\u200b', 'value': value if value else '\u200b', 'inline': inline}
 
@@ -76,6 +78,10 @@ async def on_message(msg):
             help_embed.add_field(name='**Verwendung:** `!vplan [Optionen]`', value='`ohne Args` Zeigt den kompletten Plan\n`... help` Zeigt diese Info\n`... <Klasse>` Zeigt den Plan für eine Klasse\n`... klassen` Zeigt alle Klassen die heute Vertretung haben')
             await msg.channel.send(embed=help_embed)
             return
+        elif args[1] == 'klassen':
+            msg.channel.send(message=f"Klassen die heute Vertretung haben:\n\n{', '.join(replacements.keys())}")
+        elif args[1] == 'invite: 
+            msg.channel.send(message=f"Du willst den Bot auch auf deinem Server haben?\n\nLad ihn hiermit ein: {invite_link}")
         elif args[1] in lower_keys:
             usr_class: str=lower_keys[args[1]]
             
