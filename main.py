@@ -44,7 +44,7 @@ def class_vplan(usr_class, data: list):
             fields.extend(row_for_class(data[i*2+1], data[i*2+2] if i*2+2 != len(data) else None, has_info=not no_info))
     for field in fields:
         embedded_msg.add_field(**field)
-    embedded_msg.add_footer(**default_footer)
+    embedded_msg.set_footer(**default_footer)
     return embedded_msg
 
 client = discord.Client()
@@ -88,51 +88,12 @@ async def on_message(msg):
             embedded_msg = discord.Embed(title='Vertretungsplan',
                                     description='Hier siehst du deine heutigen Vertretungen')
             embedded_msg.add_field(name='**Keine Vertretungen heute...**', value='\u200b', inline=False)
-            embedded_msg.add_footer(**default_footer)
+            embedded_msg.set_footer(**default_footer)
             msg.channel.send(embed=embedded_msg)
         else:
             for rep_class in sorted(replacements.keys()):
                 await msg.channel.send(embed=class_vplan(rep_class, replacements[rep_class]))
-#                data = sorted(replacements[rep_class], key=lambda e: e['lesson'])
-#                # abfragen ob es eine Info gibt
-#                noinfo = True in [True if 'info_text' in item else None for item in data]
 
-#                # erstes Item, mit den Keys
-#                f_item = data[0] # first item, used for the header
-#                table = [
-#                    mk_field(rep_class, None, False),
-#                    empty_field,
-#                    mk_field('**Stunde**', f_item['lesson']),
-#                    mk_field('**Lehrer**', f"~~{f_item['teacher']}~~{(' ' + f_item['replacing_teacher']) if 'replacing_teacher' in f_item else ''}"),
-#                    mk_field('**Fach**', f_item['subject']),
-#                    mk_field('**Raum**', f_item['room']),
-#                    # hier kommt das Info Feld hin, wenn es eins gibt!
-#                    mk_field('**Art**', f_item['type_of_replacement'])
-#                ]
-#                if noinfo:
-#                    table.insert(-1, mk_field('**Info**', f_item['info_text']))
-#                del f_item
-
-#                if len(data) != 1:
-#                    for f_item in data[1:]:
-#                        row = [
-#                            mk_field(None, f_item['lesson']),
-#                            mk_field(None, f"~~{f_item['teacher']}~~{(' ' + f_item['replacing_teacher']) if 'replacing_teacher' in f_item else ''}"),
-#                            mk_field(None, f_item['subject']),
-#                            mk_field(None, f_item['room']),
-#                            # hier kommt das Info Feld hin, wenn es eins gibt!
-#                            mk_field(None, f_item['type_of_replacement'])
-#                        ]
-
-#                        if noinfo:
-#                            row.insert(-1, mk_field(None, f_item['info_text']))
-#                        table.extend(row)
-
-#                fields.extend(table)
-#        for field in fields:
-#            embedded_msg.add_field(**field)
-
-#        await msg.channel.send(embed=embedded_msg)
 
 try:
     client.run(os.environ['BOT_TOKEN'] if 'BOT_TOKEN' in os.environ else open('token_secret', 'r').readlines()[0])
