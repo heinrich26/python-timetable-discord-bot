@@ -52,7 +52,7 @@ async def on_message(msg):
         if len(args) > 2:
             await msg.channel.send('**Ungültige Argumente!**\nVersuch mal `!vplan <Klasse>` oder `!vplan help`!')
             return
-        elif len(args) == 1: continue
+        elif len(args) == 1: pass
         elif len(args) == 2 and args[1] == 'help':
             help_embed = discord.Embed(title='**__Vertretungsplan Hilfe__**', description='Hier findest du alle wichtigen Commands für den Vertretungsplan!')
             help_embed.add_field(name='**Verwendung:** `!vplan [Optionen]`', value='`ohne Args` Zeigt den kompletten Plan\n`... help` Zeigt diese Info\n`... <Klasse>` Zeigt den Plan für eine Klasse\n`... klassen` Zeigt alle Klassen die heute Vertretung haben')
@@ -69,7 +69,7 @@ async def on_message(msg):
             no_info = True in [True if 'info_text' in item else None for item in data]
             fields = row_for_class(data[0], header=True, no_info=no_info)
             if len(data) != 1:
-                for i in range(0, math.ceil((len(data)-1)/2):
+                for i in range(0, math.ceil((len(data)-1)/2)):
                     fields.append(empty_field)
                     fields.extend(row_for_class(data[i*2+1], data[i*2+2] if i*2+2 != len(data) else None, no_info=no_info))
             for field in fields:
