@@ -70,11 +70,12 @@ async def on_message(msg):
             no_info = True in [True if 'info_text' in item else None for item in data]
             fields = row_for_class(data[0], header=True, no_info=no_info)
             if len(data) != 1:
-                for i in range(0, math.ceil((len(data)-1)/2)):
+                for i in range(0, math.ceil((len(data)-1)/2):
                     fields.append(empty_field)
                     fields.extend(row_for_class(data[i*2+1], data[i*2+2] if i*2+2 != len(data) else None))
             for field in fields:
                 embedded_msg.add_field(**field)
+            await msg.channel.send(embed=embedded_msg)
 
 
         # Vertretungsplan für alle Klassen
