@@ -1,4 +1,4 @@
-import urllib.request
+import urllib.request, imgkit
 from lxml import html
 from itertools import zip_longest
 
@@ -11,9 +11,44 @@ pages = {
 untis_html_keys = ('lesson', 'teacher', 'subject', 'replacing_teacher', 'room',
                    'info_text', 'type_of_replacement')
 
+page_prettifier_css = {'untis-html': '''<style type="text/css">
+    @font-face {
+        font-family: "ArialRounded";
+        src: url("./fonts/arialrounded.woff") format("woff"),
+            url("./fonts/arialrounded.woff2") format("woff2");
+    }
+
+    body, font {
+        font-family: 'ArialRounded';
+    }
+
+    table:not([rules]){
+        display:block;
+        height:0px;
+        visibility: hidden}
+
+    table[rules] {
+        background: rgba(0,0,0,0.1);
+        border-collapse: separate !important;
+        border-spacing: 0;
+        border: 3px solid black;
+        border-radius: 5px;
+    }
+
+    td {
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+
+    a {
+        color: #000000;
+    }'''
+}
+
+
+
+
 # Klasse für die Webseitenobjekte
-
-
 class Page(object):
     def __init__(self, url: str = pages['untis-html'][0], overview=True):
         self.url = url
@@ -25,18 +60,18 @@ class Page(object):
         webPage.close()
 
         self.replacements: dict = {}
+        self.times: dict = {}
+        self.previews: dict = {}
+
 
         # den Websitetypen bestimmen
+        self.type: str = None
         for type in pages:
             if url in pages[type]:
                 self.type = type
                 break
             else:
                 continue
-        try:
-            self.type
-        except:
-            self.type: str = None
 
         if self.type is not None:
             self.extract_data(overview)
@@ -51,11 +86,7 @@ class Page(object):
             pass
 
     def parse_untis_html(self):
-        # checken ob der Plan leer ist
-        # if self.code.count('<table') == 1: return # alte Abfrage mit string Code
-
         # 2. Tabelle auswählen
-        # self.code = self.code.find('<table', start=self.code.find('</table>') + 8)
         tables = self.page.findall('//center//table')
         if len(tables) == 1:
             return
@@ -63,9 +94,10 @@ class Page(object):
         # Daten aus den Zellen extrahieren
         data_cells = {cell.text_content(): cell.get('href')
                       for cell in tables[1].iterfind('.//td/a')}
-        print(data_cells)
 
+        # die Vertretungen für die einzelnen Klassen ermitteln
         for class_repl in data_cells:
+            # den Link zum Plan konstruieren
             link = data_cells[class_repl]
             if link.count('/') == 0:
                 link = self.url.rsplit('/', 1)[0] + '/' + link
@@ -73,18 +105,51 @@ class Page(object):
             page = html.parse(webPage)
             webPage.close()
 
-            events = page.xpath('((.//center//table)[2]/tr)[position()>1]')
+            # Abfragen, ob der Plan neuer ist als der in unserer Datenbank
+            data_time = page.xpath('(((.//center//table)[1])/tr[2])/td[last()]')[0].text_content()
+            if self.times.get(class_repl) == data_time: continue # überspringen
+            else:
+                self.times[class_repl] = data_time
 
+            events = page.xpath('(.//center//table)[2]/tr[position()>1]')
+
+            self.replacements[class_repl] = []
+            self.previews[class_repl] = self.get_plan_preview(page)
+
+            # Alle Vertretungen aus der Tabelle extrahieren
             for event in events:
                 cells: list = [item.text_content().strip('\n ').replace(u'\xa0', ' ')
                                 if item.text_content() != u'\xa0' else None
                                 for item in event.xpath('(.//td)[position()>1]')]
                 replacement = dict(zip_longest(untis_html_keys, cells))
 
-                if not class_repl in self.replacements:
-                    self.replacements[class_repl] = [replacement]
-                else:
-                    self.replacements[class_repl].append(replacement)
+                self.replacements[class_repl].append(replacement)
+
+        # nicht mehr vorkommene Elemente löschen
+        if len(data_cells) != len(self.replacements):
+            for class_repl in self.replacements:
+                if not class_repl in data_cells:
+                    self.replacements.pop(class_repl)
+                    self.previews.pop(class_repl)
+                else: continue
+
+
+    def get_plan_preview(self, page) -> str:
+        # unbenutzte Tabellen entfernen
+        unused_tables = page.xpath('(.//center//table)[position()!=2]')
+        for table in unused_tables: table.getparent().remove(table)
+
+        # Header finden um Stylesheet einzufügen
+        header = page.find('.//head')
+        style = html.fromstring(page_prettifier_css[self.type]).find('.//style')
+        header.insert(0, style)
+
+        html_code: str = html.tostring(page).decode('utf-8')
+        print(html_code)
+        config = imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe")
+        imgkit.from_string(html_code, output_path='out.png', config=config)
+        return html_code
+
 
 # returns all the replacements for the day
 def get_replacements(url: str = pages['untis-html'][0]) -> dict:

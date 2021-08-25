@@ -4,7 +4,7 @@ from timetable_parser import get_replacements, pages
 
 empty_field = {'name': '\u200b', 'value': '\u200b', 'inline': False}
 
-default_footer = {'text': 'Alle Angaben ohne Gewähr! '}
+default_footer = {'text': 'Alle Angaben ohne Gewähr! Aber mit Gewehr. '}
 
 invite_link = 'https://discord.com/api/oauth2/authorize?client_id=489087343589064704&permissions=268594240&scope=bot'
 
@@ -32,7 +32,7 @@ def row_for_class(class_a: dict, class_b: dict=None, header: bool=False, has_inf
             row.append(mk_field(class_a[key], class_b[key] if class_b else None))
         row.insert(1, mk_field(f"~~{class_a['teacher']}~~{(' ' + class_a['replacing_teacher']) if 'replacing_teacher' in class_a else ''}", None if not class_b else f"~~{class_b['teacher']}~~{(' ' + class_b['replacing_teacher']) if 'replacing_teacher' in class_b else ''}"))
     return row
-    
+
 def class_vplan(usr_class, data: list):
     data = sorted(data, key=lambda e: e['lesson'])
 	# Vertretungsplan für eine Klasse
@@ -81,16 +81,16 @@ async def on_message(msg):
         elif args[1] == 'klassen':
             await msg.channel.send(f"Klassen die heute Vertretung haben:\n\n{', '.join(replacements.keys())}")
             return
-        elif args[1] == 'invite': 
+        elif args[1] == 'invite':
             await msg.channel.send(f"Du willst den Bot auch auf deinem Server haben?\n\nLad ihn hiermit ein: {invite_link}")
             return
         elif args[1] in lower_keys:
             usr_class: str=lower_keys[args[1]]
-            
+
             await msg.channel.send(embed=class_vplan(usr_class, replacements[usr_class]))
             return
 
-        
+
 
         if replacements is None or replacements == {}:
             embedded_msg = discord.Embed(title='Vertretungsplan',
