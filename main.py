@@ -79,9 +79,9 @@ async def on_message(msg):
             await msg.channel.send(embed=help_embed)
             return
         elif args[1] == 'klassen':
-            msg.channel.send(message=f"Klassen die heute Vertretung haben:\n\n{', '.join(replacements.keys())}")
+            msg.channel.send(f"Klassen die heute Vertretung haben:\n\n{', '.join(replacements.keys())}")
         elif args[1] == 'invite': 
-            msg.channel.send(message=f"Du willst den Bot auch auf deinem Server haben?\n\nLad ihn hiermit ein: {invite_link}")
+            msg.channel.send(f"Du willst den Bot auch auf deinem Server haben?\n\nLad ihn hiermit ein: {invite_link}")
         elif args[1] in lower_keys:
             usr_class: str=lower_keys[args[1]]
             
