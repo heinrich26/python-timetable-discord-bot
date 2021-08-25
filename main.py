@@ -1,6 +1,5 @@
 import discord, os, math
 from timetable_parser import get_replacements, pages
-from itertools import zip_longest
 
 
 empty_field = {'name': ' ', 'value': ' ', 'inline': False}
