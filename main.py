@@ -71,7 +71,7 @@ async def on_message(msg):
             if len(data) != 1:
                 for i in range(0, math.ceil((len(data)-1)/2):
                     fields.append(empty_field)
-                    fields.extend(row_for_class(data[i*2+1], data[i*2+2] if i*2+2 != len(data) else None))
+                    fields.extend(row_for_class(data[i*2+1], data[i*2+2] if i*2+2 != len(data) else None, no_info=no_info))
             for field in fields:
                 embedded_msg.add_field(**field)
             await msg.channel.send(embed=embedded_msg)
