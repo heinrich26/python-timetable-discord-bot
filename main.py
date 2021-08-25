@@ -8,7 +8,7 @@ empty_field = {'name': ' ', 'value': ' ', 'inline': False}
 def mk_field(name=' ', value=' ', inline: bool=True) -> dict:
     return {'name': name if name else ' ', 'value': value if value else ' ', 'inline': inline}
 
-def row_for_class(class_a: dict, class_b: dict={}, header: bool = False, has_info: bool=False) -> list:
+def row_for_class(class_a: dict, class_b: dict=None, header: bool=False, has_info: bool=False) -> list:
     if header:
         row = [
             mk_field('**Stunde**', class_a['lesson']),
@@ -19,7 +19,7 @@ def row_for_class(class_a: dict, class_b: dict={}, header: bool = False, has_inf
             mk_field('**Art**', class_a['type_of_replacement'])
         ]
         if has_info:
-            table.insert(-1, mk_field('**Info**', class_a['info_text']))
+            row.insert(-1, mk_field('**Info**', class_a['info_text']))
     else:
         row = []
         keys = ('lesson', 'subject', 'room', 'info_text', 'type_of_replacement')
@@ -27,7 +27,7 @@ def row_for_class(class_a: dict, class_b: dict={}, header: bool = False, has_inf
             if i == 4 and not has_info: continue
             key = keys[i]
             row.append(mk_field(class_a[key], class_b[key] if class_b else None))
-        row.insert(1, mk_field(f"~~{class_a['teacher']}~~{(' ' + class_a['replacing_teacher']) if 'replacing_teacher' in class_a else ''}", None if class_b else f"~~{class_b['teacher']}~~{(' ' + class_b['replacing_teacher']) if 'replacing_teacher' in class_b else ''}"))
+        row.insert(1, mk_field(f"~~{class_a['teacher']}~~{(' ' + class_a['replacing_teacher']) if 'replacing_teacher' in class_a else ''}", None if not class_b else f"~~{class_b['teacher']}~~{(' ' + class_b['replacing_teacher']) if 'replacing_teacher' in class_b else ''}"))
     return row
 
 client = discord.Client()
