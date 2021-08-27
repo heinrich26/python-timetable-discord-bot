@@ -68,7 +68,7 @@ async def on_message(msg):
         args = text.split(' ')
         if len(args) > 1: args[1] = args[1].lower()
 
-        # Vertretungen abfragen    
+        # Vertretungen abfragen
 
         if len(args) > 2:
             await msg.channel.send('**Ungültige Argumente!**\nVersuch mal `!vplan <Klasse>` oder `!vplan help`!')
@@ -79,7 +79,7 @@ async def on_message(msg):
             help_embed.add_field(name='**Verwendung:** `!vplan [Optionen]`', value='`ohne Args` Zeigt den kompletten Plan\n`... help` Zeigt diese Info\n`... <Klasse>` Zeigt den Plan für eine Klasse\n`... klassen` Zeigt alle Klassen die heute Vertretung haben')
             await msg.channel.send(embed=help_embed)
             return
-        elif args[1] == 'klassen':
+        elif args[1] in ('klassen', 'classes', 'list', 'liste'):
             await msg.channel.send(f"Klassen die heute Vertretung haben:\n\n{', '.join(liliplan.get_classes())}")
             return
         elif args[1] == 'invite':
@@ -87,14 +87,13 @@ async def on_message(msg):
             return
         else:
             key, replacements = liliplan.get_plan_for_class(args[1])
-            print(key, replacements)
             embed = class_vplan(key, replacements)
+            embed.set_footer(**default_footer)
 
             file: str = liliplan.previews.get(key)
             if file is not None:
                 image = discord.File(file)
                 embed.set_image(url=f'attachment://{file}')
-
             await msg.channel.send(file=image, embed=embed)
             return
 
@@ -104,11 +103,16 @@ async def on_message(msg):
             embedded_msg = discord.Embed(title='Vertretungsplan',
                                     description='Hier siehst du deine heutigen Vertretungen')
             embedded_msg.add_field(name='**Keine Vertretungen heute...**', value='\u200b', inline=False)
-            embedded_msg.set_footer(**default_footer)
             msg.channel.send(embed=embedded_msg)
         else:
             for rep_class in sorted(replacements.keys()):
-                await msg.channel.send(embed=class_vplan(rep_class, replacements[rep_class]))
+                embed = class_vplan(rep_class, replacements[rep_class])
+
+                file: str = liliplan.previews.get(rep_class)
+                if file is not None:
+                    image = discord.File(file)
+                    embed.set_image(url=f'attachment://{file}')
+                await msg.channel.send(file=image, embed=embed)
 
 
 try:

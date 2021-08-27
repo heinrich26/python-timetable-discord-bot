@@ -99,7 +99,6 @@ class Page(object):
         # Daten aus den Zellen extrahieren
         data_cells = {cell.text_content(): cell.get('href')
                       for cell in tables[1].iterfind('.//td/a')}
-        print(data_cells)
 
         # nur die Klassen mit Vertretungen zurückgeben!
         if keys_only: return data_cells.keys()
@@ -152,7 +151,7 @@ class Page(object):
             replacement = dict(zip_longest(untis_html_keys, cells))
 
             self.replacements[key].append(replacement)
-        print(cells)
+
         return self.replacements[key]
 
 
@@ -180,7 +179,7 @@ class Page(object):
     def get_plan_for_class(self, key: str) -> tuple[str, list]:
         return self.extract_data(key)
 
-    def get_plan_for_all(self, key: str) -> dict[str, list]:
+    def get_plan_for_all(self) -> dict[str, list]:
         self.extract_data()
         return self.replacements
 
@@ -190,7 +189,6 @@ class Page(object):
         webPage = urllib.request.urlopen(self.url)
         self.page = html.parse(webPage)
         webPage.close()
-        print('page refreshed')
 
     def get_classes(self) -> list:
         return self.extract_data(keys_only=True)
