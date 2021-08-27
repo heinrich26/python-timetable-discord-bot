@@ -1,5 +1,5 @@
 import discord, os, math
-from timetable_parser import get_replacements, pages
+from timetable_parser import pages, Page
 
 
 empty_field = {'name': '\u200b', 'value': '\u200b', 'inline': False}
@@ -50,10 +50,13 @@ def class_vplan(usr_class, data: list):
     return embedded_msg
 
 client = discord.Client()
+liliplan = None
 
 @client.event
 async def on_ready():
     print(f"We've logged in as {client.user}")
+    global liliplan
+    liliplan = Page(pages['untis-html'][0])
 
 @client.event
 async def on_message(msg):
@@ -65,9 +68,7 @@ async def on_message(msg):
         args = text.split(' ')
         if len(args) > 1: args[1] = args[1].lower()
 
-        # Vertretungen abfragen
-        replacements = get_replacements()
-        lower_keys = {key.lower(): key for key in replacements} if replacements != None else ()
+        # Vertretungen abfragen    
 
         if len(args) > 2:
             await msg.channel.send('**Ungültige Argumente!**\nVersuch mal `!vplan <Klasse>` oder `!vplan help`!')
@@ -79,18 +80,25 @@ async def on_message(msg):
             await msg.channel.send(embed=help_embed)
             return
         elif args[1] == 'klassen':
-            await msg.channel.send(f"Klassen die heute Vertretung haben:\n\n{', '.join(replacements.keys())}")
+            await msg.channel.send(f"Klassen die heute Vertretung haben:\n\n{', '.join(liliplan.get_classes())}")
             return
         elif args[1] == 'invite':
             await msg.channel.send(f"Du willst den Bot auch auf deinem Server haben?\n\nLad ihn hiermit ein: {invite_link}")
             return
-        elif args[1] in lower_keys:
-            usr_class: str=lower_keys[args[1]]
+        else:
+            key, replacements = liliplan.get_plan_for_class(args[1])
+            print(key, replacements)
+            embed = class_vplan(key, replacements)
 
-            await msg.channel.send(embed=class_vplan(usr_class, replacements[usr_class]))
+            file: str = liliplan.previews.get(key)
+            if file is not None:
+                image = discord.File(file)
+                embed.set_image(url=f'attachment://{file}')
+
+            await msg.channel.send(file=image, embed=embed)
             return
 
-
+        replacements = liliplan.get_plan_for_all()
 
         if replacements is None or replacements == {}:
             embedded_msg = discord.Embed(title='Vertretungsplan',
