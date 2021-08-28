@@ -173,7 +173,11 @@ class Page(object):
         print(filename)
         options: Final = {'enable-local-file-access': None, 'width': 512}
         config = {'options': options, 'config': imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe")} if platform.system() == 'Windows' else {'options': options}
-        imgkit.from_string(html_code, filename, **config)
+        # imgkit.from_string(html_code, filename, **config)
+        bytes = imgkit.from_string(html_code, False, **config)
+        f = open(filename, 'wb')
+        f.write(bytes)
+        f.close()
         return filename
 
     # gibt den Vplan der gegebenen Klasse zurück
