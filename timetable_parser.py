@@ -1,4 +1,4 @@
-import urllib.request, imgkit, os
+import urllib.request, imgkit, os, platform
 from lxml import html
 from itertools import zip_longest
 from typing import Union, Final
@@ -171,7 +171,7 @@ class Page(object):
 
         filename = f"img_cache/{key}.png"
         options: Final = {'quiet': None, 'enable-local-file-access': None, 'width': 512}
-        config = imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe")
+        config = imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe") if platform.system() == 'Windows' else None
         imgkit.from_string(html_code, filename, options=options, config=config)
         return filename
 
