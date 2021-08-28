@@ -169,7 +169,7 @@ class Page(object):
 
         html_code: str = html.tostring(page).decode('utf-8')
 
-        filename = f"{os.getcwd().replace('\\', '/')}/img_cache/{key}.png"
+        filename = f"{os.getcwd()}/img_cache/{key}.png".replace('\\', '/')
         options: Final = {'quiet': None, 'enable-local-file-access': None, 'width': 512}
         config = {'options': options, 'config': imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe")} if platform.system() == 'Windows' else {'options': options}
         imgkit.from_string(html_code, filename, **config)
