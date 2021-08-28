@@ -171,7 +171,7 @@ class Page(object):
 
         filename = f"img_cache/{key}.png"
         options: Final = {'quiet': None, 'enable-local-file-access': None, 'width': 512}
-        config = imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe") if platform.system() == 'Windows' else None
+        config = imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe") if platform.system() == 'Windows' else imgkit.config()
         imgkit.from_string(html_code, filename, options=options, config=config)
         return filename
 
