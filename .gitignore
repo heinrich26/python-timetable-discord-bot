@@ -1,2 +1,3 @@
 token_secret
 img_cache
+__pycache__/
