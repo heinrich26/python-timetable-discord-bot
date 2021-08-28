@@ -206,8 +206,7 @@ class Page(object):
                           'enable-local-file-access': None, 'format': 'png'}
         config: Final = {
             'options': options,
-            'config': imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe")
-            if platform.system() == 'Windows' else imgkit.config()
+            'config': imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe" if platform.system() == 'Windows' else "./.apt/usr/local/bin/wkhtmltopdf")
         }
         buf = io.BytesIO(imgkit.from_string(html_code, False, **config))
         buf.seek(0)
