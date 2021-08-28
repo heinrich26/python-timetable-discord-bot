@@ -56,6 +56,12 @@ center {
 )}
 
 
+# ensures existance of the cache directory
+img_cache_path = "./img_cache"
+def check_cache_dir():
+
+    if not os.path.exists(img_cache_path):
+        os.mkdir(img_cache_path)
 
 
 # Klasse für die Webseitenobjekte
@@ -66,6 +72,8 @@ class Page(object):
         self.replacements: dict = {}
         self.times: dict = {}
         self.previews: dict = {}
+
+        check_cache_dir()
 
 
         # den Websitetypen bestimmen
@@ -169,15 +177,16 @@ class Page(object):
 
         html_code: str = html.tostring(page).decode('utf-8')
 
-        filename = f"{os.getcwd()}/img_cache/{key}.png".replace('\\', '/')
-        print(filename)
-        options: Final = {'enable-local-file-access': None, 'width': 512}
-        config = {'options': options, 'config': imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe")} if platform.system() == 'Windows' else {'options': options}
-        # imgkit.from_string(html_code, filename, **config)
-        bytes = imgkit.from_string(html_code, False, **config)
-        f = open(filename, 'wb')
-        f.write(bytes)
-        f.close()
+
+        filename = f"{img_cache_path}/{key}.png"
+        options: Final = {'quiet': None, 'width': 512,
+                          'enable-local-file-access': None}
+        config: Final = {
+            'options': options,
+            'config': imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe")
+            if platform.system() == 'Windows' else img.config()
+        }
+        imgkit.from_string(html_code, filename, **config)
         return filename
 
     # gibt den Vplan der gegebenen Klasse zurück
@@ -207,6 +216,9 @@ def get_replacements(url: str = pages['untis-html'][0]) -> dict:
         return  page.replacements
     except:
         return None
+
+
+
 
 if __name__ == '__main__':
     page = Page(pages['untis-html'][0])
