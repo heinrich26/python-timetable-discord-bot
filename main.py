@@ -1,10 +1,11 @@
 import discord, os, math
-from timetable_parser import get_replacements, pages
+from timetable_parser import pages, Page
+from class_name_preview import ImageDatabase
 
 
 empty_field = {'name': '\u200b', 'value': '\u200b', 'inline': False}
 
-default_footer = {'text': 'Alle Angaben ohne Gewähr! '}
+default_footer = {'text': 'Alle Angaben ohne Gewähr! Aber mit Gewehr. '}
 
 invite_link = 'https://discord.com/api/oauth2/authorize?client_id=489087343589064704&permissions=268594240&scope=bot'
 
@@ -15,7 +16,7 @@ def row_for_class(class_a: dict, class_b: dict=None, header: bool=False, has_inf
     if header:
         row = [
             mk_field('**Stunde**', class_a['lesson']),
-            mk_field('**Lehrer**', f"~~{class_a['teacher']}~~{(' ' + class_a['replacing_teacher']) if 'replacing_teacher' in class_a else ''}"),
+            mk_field('**Lehrer**', f"~~{class_a['teacher'] if class_a.get('teacher') is not None else ''}~~{(' ' + class_a['replacing_teacher']) if class_a.get('replacing_teacher') is not None else ''}"),
             mk_field('**Fach**', class_a['subject']),
             mk_field('**Raum**', class_a['room']),
             # hier kommt das Info Feld hin, wenn es eins gibt!
@@ -30,9 +31,9 @@ def row_for_class(class_a: dict, class_b: dict=None, header: bool=False, has_inf
             if i == 4 and not has_info: continue
             key = keys[i]
             row.append(mk_field(class_a[key], class_b[key] if class_b else None))
-        row.insert(1, mk_field(f"~~{class_a['teacher']}~~{(' ' + class_a['replacing_teacher']) if 'replacing_teacher' in class_a else ''}", None if not class_b else f"~~{class_b['teacher']}~~{(' ' + class_b['replacing_teacher']) if 'replacing_teacher' in class_b else ''}"))
+        row.insert(1, mk_field(f"~~{class_a['teacher']}~~{(' ' + class_a['replacing_teacher']) if class_a.get('replacing_teacher') is not None else ''}", None if not class_b else f"~~{class_b['teacher']}~~{(' ' + class_b['replacing_teacher']) if class_b.get('replacing_teacher') is not None else ''}"))
     return row
-    
+
 def class_vplan(usr_class, data: list):
     data = sorted(data, key=lambda e: e['lesson'])
 	# Vertretungsplan für eine Klasse
@@ -48,6 +49,9 @@ def class_vplan(usr_class, data: list):
         embedded_msg.add_field(**field)
     embedded_msg.set_footer(**default_footer)
     return embedded_msg
+
+img_db = ImageDatabase()
+liliplan = Page(pages['untis-html'][0], db=img_db)
 
 client = discord.Client()
 
@@ -66,8 +70,6 @@ async def on_message(msg):
         if len(args) > 1: args[1] = args[1].lower()
 
         # Vertretungen abfragen
-        replacements = get_replacements()
-        lower_keys = {key.lower(): key for key in replacements} if replacements != None else ()
 
         if len(args) > 2:
             await msg.channel.send('**Ungültige Argumente!**\nVersuch mal `!vplan <Klasse>` oder `!vplan help`!')
@@ -78,32 +80,66 @@ async def on_message(msg):
             help_embed.add_field(name='**Verwendung:** `!vplan [Optionen]`', value='`ohne Args` Zeigt den kompletten Plan\n`... help` Zeigt diese Info\n`... <Klasse>` Zeigt den Plan für eine Klasse\n`... klassen` Zeigt alle Klassen die heute Vertretung haben')
             await msg.channel.send(embed=help_embed)
             return
-        elif args[1] == 'klassen':
-            await msg.channel.send(f"Klassen die heute Vertretung haben:\n\n{', '.join(replacements.keys())}")
+        elif args[1] in ('klassen', 'classes', 'list', 'liste'):
+            await msg.channel.send(f"Klassen die heute Vertretung haben:\n\n{', '.join(liliplan.get_classes())}")
             return
-        elif args[1] == 'invite': 
+        elif args[1] == 'invite':
             await msg.channel.send(f"Du willst den Bot auch auf deinem Server haben?\n\nLad ihn hiermit ein: {invite_link}")
             return
-        elif args[1] in lower_keys:
-            usr_class: str=lower_keys[args[1]]
-            
-            await msg.channel.send(embed=class_vplan(usr_class, replacements[usr_class]))
+        else:
+            key, replacements = liliplan.get_plan_for_class(args[1])
+            embed = class_vplan(key, replacements)
+            embed.set_footer(**default_footer)
+
+            files = []
+            thumbnail = img_db.get_icon(key)
+            is_icon_link = type(thumbnail) == str
+            if is_icon_link:
+                embed.set_thumbnail(url=thumbnail)
+            else:
+                embed.set_thumbnail(url=f'attachment://{thumbnail.filename}')
+                files.append(thumbnail)
+
+            plan = liliplan.previews.get(key)
+            is_plan_link = type(plan) == str
+            if plan is not None:
+                if is_plan_link:
+                    embed.set_image(url=plan)
+                else:
+                    embed.set_image(url=f'attachment://{plan.filename}')
+                    files.append(plan)
+            sent_msg = await msg.channel.send(files=files, embed=embed)
+
+            if not is_icon_link:
+                img_db.set_attachment(key, sent_msg.embeds[0].thumbnail.url)
+
+            if not is_plan_link:
+                link = sent_msg.embeds[-1].image.url
+                img_db.set_attachment(key, link, liliplan.times[key])
+                liliplan.previews[key] = link
+
             return
 
-        
+        replacements = liliplan.get_plan_for_all()
 
         if replacements is None or replacements == {}:
             embedded_msg = discord.Embed(title='Vertretungsplan',
-                                    description='Hier siehst du deine heutigen Vertretungen')
-            embedded_msg.add_field(name='**Keine Vertretungen heute...**', value='\u200b', inline=False)
-            embedded_msg.set_footer(**default_footer)
+                                         description='Hier siehst du deine heutigen Vertretungen')
+            embedded_msg.add_field(name='**Keine Vertretungen heute...**',
+                                   value='\u200b', inline=False)
             msg.channel.send(embed=embedded_msg)
         else:
             for rep_class in sorted(replacements.keys()):
-                await msg.channel.send(embed=class_vplan(rep_class, replacements[rep_class]))
+                embed = class_vplan(rep_class, replacements[rep_class])
+
+                file: str = liliplan.previews.get(rep_class)
+                if file is not None:
+                    image = discord.File(file)
+                    embed.set_image(url=f"attachment://{file.rsplit('/', 1)[1]}")
+                await msg.channel.send(file=image, embed=embed)
 
 
 try:
     client.run(os.environ['BOT_TOKEN'] if 'BOT_TOKEN' in os.environ else open('token_secret', 'r').readlines()[0])
-except:
-    print("error")
+except Exception as exception:
+    print(exception)
