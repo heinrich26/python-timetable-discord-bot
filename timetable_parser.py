@@ -1,4 +1,4 @@
-import urllib.request, imgkit, os, platform
+import urllib.request, imgkit, os, platform, io, discord
 from lxml import html
 from itertools import zip_longest
 from typing import Union, Final
@@ -9,8 +9,8 @@ pages: Final = {
     'untis-html': ["https://www.lilienthal-gymnasium-berlin.de/interna/vplan/Druck_Kla.htm"]
 }
 
-untis_html_keys: Final = ('lesson', 'teacher', 'subject', 'replacing_teacher', 'room',
-                   'info_text', 'type_of_replacement')
+untis_html_keys: Final = ('lesson', 'teacher', 'subject', 'replacing_teacher',
+                          'room', 'info_text', 'type_of_replacement')
 
 # construct the absolute path for the fonts
 fontpath_a = os.path.join(os.getcwd(), 'fonts/arialrounded.woff').replace('\\', '/')
@@ -46,6 +46,14 @@ td {
     padding-bottom: 4px;
 }
 
+tr:not(:first-child) > td:nth-child(2) > font {
+    text-decoration: line-through;
+}
+
+td:nth-child(4) {
+    display: none;
+}
+
 a {
     color: #000000;
 }
@@ -59,19 +67,20 @@ center {
 # ensures existance of the cache directory
 img_cache_path = "./img_cache"
 def check_cache_dir():
-
     if not os.path.exists(img_cache_path):
         os.mkdir(img_cache_path)
 
 
 # Klasse für die Webseitenobjekte
 class Page(object):
-    def __init__(self, url: str = pages['untis-html'][0], overview=True):
+    def __init__(self, url: str = pages['untis-html'][0], overview=True, db=None):
         self.url: Final = url
 
         self.replacements: dict = {}
         self.times: dict = {}
         self.previews: dict = {}
+
+        self.db = db
 
         check_cache_dir()
 
@@ -142,10 +151,10 @@ class Page(object):
 
         # Abfragen, ob der Plan neuer ist als der in unserer Datenbank
         data_time = page.xpath('(((.//center//table)[1])/tr[2])/td[last()]')[0].text_content()
-        if self.times.get(key) == data_time: return self.replacements[key] # überspringen, vorherigen Wert zurückgeben
+        if self.times.get(key) == data_time:
+            return self.replacements[key] # überspringen, vorherigen Wert zurückgeben
         else:
-            self.times[key] = data_time
-
+            self.times[key] = data_time # Datum eintragen
         events = page.xpath('(.//center//table)[2]/tr[position()>1]')
 
         self.replacements[key] = []
@@ -164,10 +173,24 @@ class Page(object):
 
 
     # macht ein Bild vom Vertretungsplan
-    def get_plan_preview(self, page, key: str) -> str:
+    def get_plan_preview(self, page, key: str) -> Union[discord.File, str]:
+        plan_img_url: str = self.db.get_plan(key, self.times[key])
+        if plan_img_url is not None:
+            return plan_img_url
+
         # unbenutzte Tabellen entfernen
         unused_tables = page.xpath('(.//center//table)[position()!=2]')
-        for table in unused_tables + page.findall('.//meta'):
+        second_table = page.xpath('(.//center//table)[2]')[0]
+
+        teachers = second_table.xpath('./tr/td[3]/font')
+        replacers = second_table.xpath('./tr/td[5]/font')
+
+        # merge col 2 and 5 (teachers & replacers)
+        for i in range(0, len(teachers)):
+            replacer = replacers[i].text
+            teachers[i].tail = ' ' if teachers[i].text is not None else '' + replacer if replacer != '---' else ''
+
+        for table in unused_tables + page.findall('.//meta') + page.xpath('((.//center//table)[2])//td[1]'):
             table.getparent().remove(table)
 
         # Header finden um Stylesheet einzufügen
@@ -178,16 +201,17 @@ class Page(object):
         html_code: str = html.tostring(page).decode('utf-8')
 
 
-        filename = f"{img_cache_path}/{key}.png"
-        options: Final = {'quiet': None, 'width': 512,
-                          'enable-local-file-access': None}
+        filename = f'{key}_plan.png'
+        options: Final = {'quiet': None, 'width': 512, 'transparent': None,
+                          'enable-local-file-access': None, 'format': 'png'}
         config: Final = {
             'options': options,
             'config': imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe")
             if platform.system() == 'Windows' else imgkit.config()
         }
-        imgkit.from_string(html_code, filename, **config)
-        return filename
+        buf = io.BytesIO(imgkit.from_string(html_code, False, **config))
+        buf.seek(0)
+        return discord.File(buf, filename=filename)
 
     # gibt den Vplan der gegebenen Klasse zurück
     def get_plan_for_class(self, key: str) -> tuple[str, list]:

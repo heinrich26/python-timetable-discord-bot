@@ -9,7 +9,8 @@
                 url("fonts/arialrounded.woff2") format("woff2");
         }
 
-        body, font {
+        body,
+        font {
             font-family: 'ArialRounded';
         }
 
@@ -24,6 +25,14 @@
             border-spacing: 0;
             border: 3px solid black;
             border-radius: 5px;
+        }
+
+        tr:not(:first-child) > td:nth-child(2) > font {
+            text-decoration: line-through;
+        }
+
+        td:nth-child(5){
+            display: none;
         }
 
         td {

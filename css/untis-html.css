@@ -29,6 +29,14 @@ td {
     padding-bottom: 4px;
 }
 
+tr:not(:first-child) > td:nth-child(2) > font {
+    text-decoration: line-through;
+}
+
+td:nth-child(5){
+    display: none;
+}
+
 a {
     color: #000000;
 }
