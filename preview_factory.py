@@ -1,21 +1,25 @@
 from discord import Embed, File, Colour
-from timetable_parser import ReplacementType
 from typing import TypedDict, Final
-import codecs
+import codecs, os
+
+from replacement_types import ReplacementType
 
 replaced: Final = ('vertretung', 'betreuung')
 
-stylesheet = '''<style>
+fontpath_a = os.path.join(os.getcwd(), 'fonts/arialrounded.ttf').replace('\\', '/')
+fontpath_b = os.path.join(os.getcwd(), 'fonts/Arial_Rounded_MT_ExtraBold.ttf').replace('\\', '/')
+
+stylesheet = ('''<style>
 @font-face {
-    font-family: "ArialRounded";
-    src: url("fonts/arialrounded.ttf");
-    font-weight: 700;
+    font-family: "ArialRounded";'''
+f"  src: url('{fontpath_a}');"
+''' font-weight: 700;
 }
 
 @font-face {
-    font-family: "ArialRounded";
-    src: url("fonts/Arial_Rounded_MT_ExtraBold.ttf");
-    font-weight: 1000;
+    font-family: "ArialRounded";'''
+f"    src: url('{fontpath_b}');"
+''' font-weight: 1000;
 }
 
 center {
@@ -62,7 +66,7 @@ center > div > div:last-child {
 div > div > div:first-child {
     font-weight: 1000;
 }
-</style>'''
+</style>''')
 
 class MessageData(TypedDict):
     files: list[File]

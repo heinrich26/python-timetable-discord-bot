@@ -1,16 +1,10 @@
 import urllib.request, imgkit, os, platform, io, discord
 from lxml import html
 from itertools import zip_longest
-from typing import Union, Final, TypedDict
+from typing import Union, Final
+from preview_factory import create_html_preview
+from replacement_types import ReplacementType
 
-class ReplacementType(TypedDict):
-    lesson: str
-    teacher: str
-    subject: str
-    replacing_teacher: str
-    room: str
-    info_text: str
-    type_of_replacement: str
 
 
 # die Webseitentypen mit bekannten URLs
@@ -182,33 +176,67 @@ class Page(object):
 
 
     # macht ein Bild vom Vertretungsplan
+    # def get_plan_preview(self, page, key: str) -> Union[discord.File, str]:
+    #     plan_img_url: str = self.db.get_plan(key, self.times[key])
+    #     if plan_img_url is not None:
+    #         return plan_img_url
+    #
+    #     # unbenutzte Tabellen entfernen
+    #     unused_tables = page.xpath('(.//center//table)[position()!=2]')
+    #     second_table = page.xpath('(.//center//table)[2]')[0]
+    #
+    #     teachers = second_table.xpath('./tr/td[3]/font')
+    #     replacers = second_table.xpath('./tr/td[5]/font')
+    #
+    #     # merge col 2 and 5 (teachers & replacers)
+    #     for i in range(0, len(teachers)):
+    #         replacer = replacers[i].text
+    #         teachers[i].tail = (' ' if teachers[i].text is not None else '') + (replacer if replacer != '---' else '')
+    #
+    #     for table in unused_tables + page.findall('.//meta') + page.xpath('((.//center//table)[2])//td[1]'):
+    #         table.getparent().remove(table)
+    #
+    #     # Header finden um Stylesheet einzufügen
+    #     header = page.find('.//head')
+    #     style = html.fromstring(page_prettifier_css[self.type]).find('.//style')
+    #     header.insert(0, style)
+    #
+    #     # Nach HTML konvertieren & newlines entfernen, die extra Spaces erzeugen
+    #     html_code: str = html.tostring(page).decode('utf-8').replace('\n', '')
+    #
+    #
+    #     filename = f'{key}_plan.png'
+    #     options: Final = {'quiet': None, 'width': 512, 'transparent': None,
+    #                       'enable-local-file-access': None, 'format': 'png',
+    #                       'encoding': "UTF-8"}
+    #
+    #     conf = imgkit.config()
+    #     if platform.system() == 'Linux':
+    #         try:
+    #             conf.get_wkhtmltoimage()
+    #         except:
+    #             conf.wkhtmltoimage = "./.apt/usr/local/bin/wkhtmltoimage"
+    #     else:
+    #         conf.wkhtmltoimage = "C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe"
+    #     config: Final = {
+    #         'options': options,
+    #         'config': conf
+    #     }
+    #
+    #     buf = io.BytesIO(imgkit.from_string(html_code, False, **config))
+    #     buf.seek(0)
+    #     return discord.File(buf, filename=filename)
+
+
+    # macht ein Bild vom Vertretungsplan
     def get_plan_preview(self, page, key: str) -> Union[discord.File, str]:
         plan_img_url: str = self.db.get_plan(key, self.times[key])
         if plan_img_url is not None:
             return plan_img_url
 
-        # unbenutzte Tabellen entfernen
-        unused_tables = page.xpath('(.//center//table)[position()!=2]')
-        second_table = page.xpath('(.//center//table)[2]')[0]
-
-        teachers = second_table.xpath('./tr/td[3]/font')
-        replacers = second_table.xpath('./tr/td[5]/font')
-
-        # merge col 2 and 5 (teachers & replacers)
-        for i in range(0, len(teachers)):
-            replacer = replacers[i].text
-            teachers[i].tail = (' ' if teachers[i].text is not None else '') + (replacer if replacer != '---' else '')
-
-        for table in unused_tables + page.findall('.//meta') + page.xpath('((.//center//table)[2])//td[1]'):
-            table.getparent().remove(table)
-
-        # Header finden um Stylesheet einzufügen
-        header = page.find('.//head')
-        style = html.fromstring(page_prettifier_css[self.type]).find('.//style')
-        header.insert(0, style)
 
         # Nach HTML konvertieren & newlines entfernen, die extra Spaces erzeugen
-        html_code: str = html.tostring(page).decode('utf-8').replace('\n', '')
+        html_code: str = create_html_preview(self.replacements[key], key)
 
 
         filename = f'{key}_plan.png'
@@ -265,6 +293,7 @@ def get_replacements(url: str = pages['untis-html'][0]) -> dict:
 
 
 if __name__ == '__main__':
-    page = Page(pages['untis-html'][0])
+    from class_name_preview import ImageDatabase
+    page = Page(pages['untis-html'][0], db=ImageDatabase())
 
     print(page.replacements)

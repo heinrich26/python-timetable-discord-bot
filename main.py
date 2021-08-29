@@ -1,8 +1,9 @@
 import os, math
-from timetable_parser import pages, Page, ReplacementType
+from discord import Embed, File, Client
+
 from class_name_preview import ImageDatabase
-from preview_factory import prepare_replacements, create_embed, MessageData
-from discord import Embed, File, MessageType, Client
+from timetable_parser import pages, Page
+from replacement_types import ReplacementType
 
 empty_field = {'name': '\u200b', 'value': '\u200b', 'inline': False}
 
@@ -52,43 +53,43 @@ def class_vplan(usr_class, data: list):
     return embedded_msg
 
 # not possible because we can only send one Embed at a Time, which would be horribily inefficient!
-def send_plan(replacements: list[ReplacementType], msg: MessageType, class_name: str) -> list[MessageData]:
-    messages: list[MessageData] = []
-    thumbnails: dict = {}
-    # the max embeds for one Message are 10, so we need to split
-    for replacements in prepare_replacements(replacements):
-        message = {'embeds': [], 'files': []}
-        if messages == []: message['content'] = f'Vertretungsplan der {class_name}' # TODO add a date
-
-        msg_thumbnails: set[int] = set()
-        for i in range(0, len(replacements)):
-            replacement = replacements[i]
-            embed: Embed = create_embed(replacement)
-
-            lesson: str = replacement.get('lesson')
-            if lesson is not None:
-                if lesson in thumbnails:
-                    embed.set_thumbnail(url=thumbnails[lesson])
-                else:
-                    thumbnail = img_db.get_icon(lesson)
-                    if type(thumbnail) == str:
-                        embed.set_thumbnail(url=thumbnail)
-                        thumbnails.put(lesson, thumbnail)
-                    else:
-                        link = f'attachment://{thumbnail.filename}'
-
-                        # keep the link to refresh it later
-                        thumbnails[lesson] = link
-                        msg_thumbnails.add(i)
-
-                        embed.set_thumbnail(link)
-                        message['files'].append(thumbnail)
-
-            message['embeds'].append(embed)
-
-        await msg.channel.send()
-
-    # Save the newly generated Links in the ImageDatabase
+# def send_plan(replacements: list[ReplacementType], msg: MessageType, class_name: str) -> list[MessageData]:
+#     messages: list[MessageData] = []
+#     thumbnails: dict = {}
+#     # the max embeds for one Message are 10, so we need to split
+#     for replacements in prepare_replacements(replacements):
+#         message = {'embeds': [], 'files': []}
+#         if messages == []: message['content'] = f'Vertretungsplan der {class_name}' # TODO add a date
+#
+#         msg_thumbnails: set[int] = set()
+#         for i in range(0, len(replacements)):
+#             replacement = replacements[i]
+#             embed: Embed = create_embed(replacement)
+#
+#             lesson: str = replacement.get('lesson')
+#             if lesson is not None:
+#                 if lesson in thumbnails:
+#                     embed.set_thumbnail(url=thumbnails[lesson])
+#                 else:
+#                     thumbnail = img_db.get_icon(lesson)
+#                     if type(thumbnail) == str:
+#                         embed.set_thumbnail(url=thumbnail)
+#                         thumbnails.put(lesson, thumbnail)
+#                     else:
+#                         link = f'attachment://{thumbnail.filename}'
+#
+#                         # keep the link to refresh it later
+#                         thumbnails[lesson] = link
+#                         msg_thumbnails.add(i)
+#
+#                         embed.set_thumbnail(link)
+#                         message['files'].append(thumbnail)
+#
+#             message['embeds'].append(embed)
+#
+#         await msg.channel.send()
+#
+#     # Save the newly generated Links in the ImageDatabase
 
 
 
