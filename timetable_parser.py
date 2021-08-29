@@ -46,7 +46,7 @@ td {
     padding-bottom: 4px;
 }
 
-tr:not(:first-child) > td:nth-child(3) > font {
+tr:not(:first-child) > td:nth-child(2) > font {
     text-decoration: line-through;
 }
 
@@ -188,7 +188,7 @@ class Page(object):
         # merge col 2 and 5 (teachers & replacers)
         for i in range(0, len(teachers)):
             replacer = replacers[i].text
-            teachers[i].tail = ' ' if teachers[i].text is not None else '' + replacer if replacer != '---' else ''
+            teachers[i].tail = (' ' if teachers[i].text is not None else '') + (replacer if replacer != '---' else '')
 
         for table in unused_tables + page.findall('.//meta') + page.xpath('((.//center//table)[2])//td[1]'):
             table.getparent().remove(table)
@@ -198,22 +198,23 @@ class Page(object):
         style = html.fromstring(page_prettifier_css[self.type]).find('.//style')
         header.insert(0, style)
 
-        html_code: str = html.tostring(page).decode('utf-8')
+        # Nach HTML konvertieren & newlines entfernen, die extra Spaces erzeugen
+        html_code: str = html.tostring(page).decode('utf-8').replace('\n', '')
 
 
         filename = f'{key}_plan.png'
         options: Final = {'quiet': None, 'width': 512, 'transparent': None,
                           'enable-local-file-access': None, 'format': 'png',
-                          'encoding': "UTF-8", 'xvfb': None}
+                          'encoding': "UTF-8"}
 
         conf = imgkit.config()
-        try:
-            conf.get_wkhtmltoimage()
-        except:
-            if platform.system() == 'Linux':
+        if platform.system() == 'Linux':
+            try:
+                conf.get_wkhtmltoimage()
+            except:
                 conf.wkhtmltoimage = "./.apt/usr/local/bin/wkhtmltoimage"
-            else:
-                conf.wkhtmltoimage = "C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe"
+        else:
+            conf.wkhtmltoimage = "C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe"
         config: Final = {
             'options': options,
             'config': conf
