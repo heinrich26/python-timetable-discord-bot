@@ -2,7 +2,7 @@ import urllib.request, imgkit, os, platform, io, discord
 from lxml import html
 from itertools import zip_longest
 from typing import Union, Final
-from preview_factory import create_html_preview
+from preview_factory import create_html_preview, prettify_html
 from replacement_types import ReplacementType
 
 
