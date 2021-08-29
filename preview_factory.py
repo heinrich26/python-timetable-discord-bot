@@ -1,5 +1,6 @@
 from discord import Embed, File, Colour
 from typing import TypedDict, Final
+from bs4 import BeautifulSoup
 import codecs, os
 
 from replacement_types import ReplacementType
