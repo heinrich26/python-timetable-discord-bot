@@ -239,7 +239,7 @@ class Page(object):
         html_code: str = create_html_preview(self.replacements[key], key)
 
 
-        filename = f'{key}_plan.png'
+        filename = f'{key}_plan.png'.replace('-', '_')
         options: Final = {'quiet': None, 'width': 512, 'transparent': None,
                           'enable-local-file-access': None, 'format': 'png',
                           'encoding': "UTF-8"}
