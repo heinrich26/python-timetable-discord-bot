@@ -240,7 +240,7 @@ class Page(object):
 
 
         filename = f'{key}_plan.png'
-        options: Final = {'quiet': None, 'transparent': None,
+        options: Final = {'quiet': None, 'width': 512, 'transparent': None,
                           'enable-local-file-access': None, 'format': 'png',
                           'encoding': "UTF-8"}
 
