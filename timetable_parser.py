@@ -257,9 +257,9 @@ class Page(object):
             'config': conf
         }
 
-        buf = io.BytesIO(imgkit.from_string(html_code, False, **config))
-        buf.seek(0)
-        return discord.File(buf, filename=filename)
+        buf = imgkit.from_string(html_code, filename, **config) #io.BytesIO()
+        #buf.seek(0)
+        return discord.File(filename)
 
     # gibt den Vplan der gegebenen Klasse zurück
     def get_plan_for_class(self, key: str) -> tuple[str, list]:
