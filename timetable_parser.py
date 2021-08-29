@@ -239,7 +239,7 @@ class Page(object):
         html_code: str = create_html_preview(self.replacements[key], key)
 
 
-        filename = f'{key}_plan.png'.replace('-', '_')
+        filename = f'{key}_plan.png'
         options: Final = {'quiet': None, 'width': 512, 'transparent': None,
                           'enable-local-file-access': None, 'format': 'png',
                           'encoding': "UTF-8"}
@@ -257,9 +257,9 @@ class Page(object):
             'config': conf
         }
 
-        buf = imgkit.from_string(html_code, filename, **config) #io.BytesIO()
-        #buf.seek(0)
-        return discord.File(filename)
+        buf = io.BytesIO(imgkit.from_string(html_code, False, **config))
+        buf.seek(0)
+        return discord.File(buf, filename=filename)
 
     # gibt den Vplan der gegebenen Klasse zurück
     def get_plan_for_class(self, key: str) -> tuple[str, list]:
