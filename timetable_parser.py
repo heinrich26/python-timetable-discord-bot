@@ -46,7 +46,7 @@ td {
     padding-bottom: 4px;
 }
 
-tr:not(:first-child) > td:nth-child(2) > font {
+tr:not(:first-child) > td:nth-child(3) > font {
     text-decoration: line-through;
 }
 
@@ -206,13 +206,14 @@ class Page(object):
                           'enable-local-file-access': None, 'format': 'png',
                           'encoding': "UTF-8", 'xvfb': None}
 
-        if platform.system() == 'Linux':
-            conf = imgkit.config()
-            try:
-                conf.get_wkhtmltoimage()
-            except:
+        conf = imgkit.config()
+        try:
+            conf.get_wkhtmltoimage()
+        except:
+            if platform.system() == 'Linux':
                 conf.wkhtmltoimage = "./.apt/usr/local/bin/wkhtmltoimage"
-        else: conf.wkhtmltoimage = "C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe"
+            else:
+                conf.wkhtmltoimage = "C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe"
         config: Final = {
             'options': options,
             'config': conf
