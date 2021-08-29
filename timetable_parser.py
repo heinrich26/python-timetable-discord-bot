@@ -203,11 +203,21 @@ class Page(object):
 
         filename = f'{key}_plan.png'
         options: Final = {'quiet': None, 'width': 512, 'transparent': None,
-                          'enable-local-file-access': None, 'format': 'png'}
+                          'enable-local-file-access': None, 'format': 'png',
+                          'encoding': "UTF-8", 'xvfb': None}
+
+        if platform.system() == 'Linux':
+            conf = imgkit.config()
+            try:
+                conf.get_wkhtmltoimage()
+            except:
+                conf.wkhtmltoimage = "./.apt/usr/local/bin/wkhtmltoimage"
+        else: conf.wkhtmltoimage = "C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe"
         config: Final = {
             'options': options,
-            'config': imgkit.config(wkhtmltoimage="C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe" if platform.system() == 'Windows' else "./.apt/usr/local/bin/wkhtmltoimage")
+            'config': conf
         }
+
         buf = io.BytesIO(imgkit.from_string(html_code, False, **config))
         buf.seek(0)
         return discord.File(buf, filename=filename)

@@ -2,4 +2,5 @@ token_secret
 img_cache
 __pycache__
 out.png
-attachment.db
+attachments.db
+testing.html
