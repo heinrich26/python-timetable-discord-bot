@@ -1,7 +1,16 @@
 import urllib.request, imgkit, os, platform, io, discord
 from lxml import html
 from itertools import zip_longest
-from typing import Union, Final
+from typing import Union, Final, TypedDict
+
+class ReplacementType(TypedDict):
+    lesson: str
+    teacher: str
+    subject: str
+    replacing_teacher: str
+    room: str
+    info_text: str
+    type_of_replacement: str
 
 
 # die Webseitentypen mit bekannten URLs
@@ -141,7 +150,7 @@ class Page(object):
                 else: continue
 
     # extrahiert den Vplan für die jeweilige Klasse
-    def parse_untis_html_table(self, key, link) -> list:
+    def parse_untis_html_table(self, key, link) -> list[ReplacementType]:
         # den Link zum Plan konstruieren
         if link.count('/') == 0:
             link = self.url.rsplit('/', 1)[0] + '/' + link
@@ -165,7 +174,7 @@ class Page(object):
             cells: list = [item.text_content().strip('\n ').replace(u'\xa0', ' ')
                             if item.text_content() != u'\xa0' else None
                             for item in event.xpath('(.//td)[position()>1]')]
-            replacement = dict(zip_longest(untis_html_keys, cells))
+            replacement: ReplacementType = dict(zip_longest(untis_html_keys, cells))
 
             self.replacements[key].append(replacement)
 

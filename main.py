@@ -1,7 +1,8 @@
-import discord, os, math
-from timetable_parser import pages, Page
+import os, math
+from timetable_parser import pages, Page, ReplacementType
 from class_name_preview import ImageDatabase
-
+from preview_factory import prepare_replacements, create_embed, MessageData
+from discord import Embed, File, MessageType, Client
 
 empty_field = {'name': '\u200b', 'value': '\u200b', 'inline': False}
 
@@ -37,7 +38,7 @@ def row_for_class(class_a: dict, class_b: dict=None, header: bool=False, has_inf
 def class_vplan(usr_class, data: list):
     data = sorted(data, key=lambda e: e['lesson'])
 	# Vertretungsplan für eine Klasse
-    embedded_msg = discord.Embed(title=f'Vertretungsplan der {usr_class}', description='Hier siehst du deine heutigen Vertretungen')
+    embedded_msg = Embed(title=f'Vertretungsplan der {usr_class}', description='Hier siehst du deine heutigen Vertretungen')
 
     no_info = True in [True if 'info_text' in item else None for item in data]
     fields = row_for_class(data[0], header=True, has_info=not no_info)
@@ -50,10 +51,52 @@ def class_vplan(usr_class, data: list):
     embedded_msg.set_footer(**default_footer)
     return embedded_msg
 
+# not possible because we can only send one Embed at a Time, which would be horribily inefficient!
+def send_plan(replacements: list[ReplacementType], msg: MessageType, class_name: str) -> list[MessageData]:
+    messages: list[MessageData] = []
+    thumbnails: dict = {}
+    # the max embeds for one Message are 10, so we need to split
+    for replacements in prepare_replacements(replacements):
+        message = {'embeds': [], 'files': []}
+        if messages == []: message['content'] = f'Vertretungsplan der {class_name}' # TODO add a date
+
+        msg_thumbnails: set[int] = set()
+        for i in range(0, len(replacements)):
+            replacement = replacements[i]
+            embed: Embed = create_embed(replacement)
+
+            lesson: str = replacement.get('lesson')
+            if lesson is not None:
+                if lesson in thumbnails:
+                    embed.set_thumbnail(url=thumbnails[lesson])
+                else:
+                    thumbnail = img_db.get_icon(lesson)
+                    if type(thumbnail) == str:
+                        embed.set_thumbnail(url=thumbnail)
+                        thumbnails.put(lesson, thumbnail)
+                    else:
+                        link = f'attachment://{thumbnail.filename}'
+
+                        # keep the link to refresh it later
+                        thumbnails[lesson] = link
+                        msg_thumbnails.add(i)
+
+                        embed.set_thumbnail(link)
+                        message['files'].append(thumbnail)
+
+            message['embeds'].append(embed)
+
+        await msg.channel.send()
+
+    # Save the newly generated Links in the ImageDatabase
+
+
+
+
 img_db = ImageDatabase()
 liliplan = Page(pages['untis-html'][0], db=img_db)
 
-client = discord.Client()
+client = Client()
 
 @client.event
 async def on_ready():
@@ -76,7 +119,7 @@ async def on_message(msg):
             return
         elif len(args) == 1: pass
         elif len(args) == 2 and args[1] == 'help':
-            help_embed = discord.Embed(title='**__Vertretungsplan Hilfe__**', description='Hier findest du alle wichtigen Commands für den Vertretungsplan!')
+            help_embed = Embed(title='**__Vertretungsplan Hilfe__**', description='Hier findest du alle wichtigen Commands für den Vertretungsplan!')
             help_embed.add_field(name='**Verwendung:** `!vplan [Optionen]`', value='`ohne Args` Zeigt den kompletten Plan\n`... help` Zeigt diese Info\n`... <Klasse>` Zeigt den Plan für eine Klasse\n`... klassen` Zeigt alle Klassen die heute Vertretung haben')
             await msg.channel.send(embed=help_embed)
             return
@@ -120,10 +163,10 @@ async def on_message(msg):
 
             return
 
-        replacements = liliplan.get_plan_for_all()
+        replacements: list[ReplacementType] = liliplan.get_plan_for_all()
 
         if replacements is None or replacements == {}:
-            embedded_msg = discord.Embed(title='Vertretungsplan',
+            embedded_msg = Embed(title='Vertretungsplan',
                                          description='Hier siehst du deine heutigen Vertretungen')
             embedded_msg.add_field(name='**Keine Vertretungen heute...**',
                                    value='\u200b', inline=False)
@@ -134,7 +177,7 @@ async def on_message(msg):
 
                 file: str = liliplan.previews.get(rep_class)
                 if file is not None:
-                    image = discord.File(file)
+                    image = File(file)
                     embed.set_image(url=f"attachment://{file.rsplit('/', 1)[1]}")
                 await msg.channel.send(file=image, embed=embed)
 
