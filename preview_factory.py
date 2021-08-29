@@ -75,7 +75,7 @@ class MessageData(TypedDict):
 
 def prettify_html(func):
     def wrapper_prettify_html(*args, **kwargs):
-        return Beautifulsoup(func(*args, **kwargs)).prettify()
+        return BeautifulSoup(func(*args, **kwargs)).prettify()
     return wrapper_prettify_html
 
 # splits a List into Sublists with len() <= n
