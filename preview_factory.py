@@ -73,6 +73,11 @@ class MessageData(TypedDict):
     files: list[File]
     embeds: list[Embed]
 
+def pettify_html(func):
+    def wrapper_prettify_html(*args, **kwargs):
+        return Beautifulsoup(func(*args, **kwargs)).prettify()
+    return wrapper_prettify_html
+
 # splits a List into Sublists with len() <= n
 def chunks(list: list, n: int):
     """Yield successive n-sized chunks from lst."""
@@ -132,7 +137,7 @@ def convert_unicode_chars(input: str) -> str:
                 out += '&#' + str(ord(char)) + ';'
     return input
 
-
+@prettify_html
 def create_html_preview(replacements: list[ReplacementType], class_name: str) -> str:
     html = stylesheet + f'<h1>Vertretungsplan der {class_name}</h1><br>' # insert a class
 
@@ -141,6 +146,8 @@ def create_html_preview(replacements: list[ReplacementType], class_name: str) ->
 
     html = '<head><meta http-equiv="content-type" content="text/html; charset=utf-8"></head>\n' + \
             convert_unicode_chars(wrap_tag(wrap_tag(html, 'center'), 'body'))
+
+    print(html)
 
     return wrap_tag(html, 'html')
 
