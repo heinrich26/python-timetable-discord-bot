@@ -147,8 +147,6 @@ def create_html_preview(replacements: list[ReplacementType], class_name: str) ->
     html = '<head><meta http-equiv="content-type" content="text/html; charset=utf-8"></head>\n' + \
             convert_unicode_chars(wrap_tag(wrap_tag(html, 'center'), 'body'))
 
-    print(html)
-
     return wrap_tag(html, 'html')
 
 keys = ('lesson', 'teacher', 'subject', 'replacing_teacher',
