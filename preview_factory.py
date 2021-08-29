@@ -73,7 +73,7 @@ class MessageData(TypedDict):
     files: list[File]
     embeds: list[Embed]
 
-def pettify_html(func):
+def prettify_html(func):
     def wrapper_prettify_html(*args, **kwargs):
         return Beautifulsoup(func(*args, **kwargs)).prettify()
     return wrapper_prettify_html
