@@ -131,7 +131,7 @@ class Page(object):
                 self.parse_untis_html_table(*kv, False)
         elif key.lower() in key_dict:
             key = key_dict[key.lower()]
-            return key, self.parse_untis_html_table(key, data_cells[key])
+            return key, *self.parse_untis_html_table(key, data_cells[key])
         else: return None
         del key_dict, key
 
