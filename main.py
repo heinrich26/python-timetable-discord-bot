@@ -155,7 +155,7 @@ async def on_message(msg):
             else:
                 for key in sorted(replacements.keys()):
                     async with msg.channel.typing():
-                        key, files, embed, bools = build_plan(msg, key, replacements[key], previews[key]))
+                        key, files, embed, bools = build_plan(msg, key, replacements[key], previews[key])
                         sent_msg = await msg.channel.send(files=files, embed=embed)
                         update_database_from_msg(key, sent_msg, bools)
                 # Remove files from the Previews
