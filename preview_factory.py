@@ -146,7 +146,7 @@ def convert_unicode_chars(input: str) -> str:
     return input
 
 # @prettify_html
-def create_html_preview(replacements: list[ReplacementType], class_name: str) -> str:
+def create_html_preview(replacements: list[ReplacementType]) -> str:
     html = stylesheet + '<table>'
 
     for replacement in sort_items(replacements):

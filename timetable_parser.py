@@ -1,10 +1,10 @@
-import urllib.request, imgkit, os, platform, io, discord
+import urllib.request, imgkit, os, platform, io
+from discord import File
 from lxml import html
 from itertools import zip_longest
 from typing import Union, Final
 from preview_factory import create_html_preview
-from replacement_types import ReplacementType
-
+from replacement_types import ReplacementType, PlanPreview
 
 
 # die Webseitentypen mit bekannten URLs
@@ -101,7 +101,7 @@ class Page(object):
             self.extract_data()
 
     # die Funktionen für die Websitetypen ausführen
-    def extract_data(self, key: str=None, keys_only: bool=False) -> Union[tuple[str, list], dict]:
+    def extract_data(self, key: str=None, keys_only: bool=False) -> Union[tuple[str, list[ReplacementType], PlanPreview], dict[list[ReplacementType]]]:
         self.refresh_page()
         if self.type is None:
             return
@@ -110,7 +110,7 @@ class Page(object):
         else:
             pass
 
-    def parse_untis_html(self, key: str=None, keys_only: bool=False) -> Union[tuple[str, list], dict]:
+    def parse_untis_html(self, key: str=None, keys_only: bool=False) -> Union[tuple[str, list[ReplacementType], PlanPreview], dict[list[ReplacementType]]]:
         # 2. Tabelle auswählen
         tables = self.page.findall('//center//table')
         if len(tables) == 1:
@@ -128,7 +128,7 @@ class Page(object):
         if key is None:
             # die Vertretungen für die einzelnen Klassen ermitteln
             for kv in data_cells.items():
-                self.parse_untis_html_table(*kv)
+                self.parse_untis_html_table(*kv, False)
         elif key.lower() in key_dict:
             key = key_dict[key.lower()]
             return key, self.parse_untis_html_table(key, data_cells[key])
@@ -144,100 +144,55 @@ class Page(object):
                 else: continue
 
     # extrahiert den Vplan für die jeweilige Klasse
-    def parse_untis_html_table(self, key, link) -> list[ReplacementType]:
+    def parse_untis_html_table(self, key, link, single: bool=True) -> tuple(list[ReplacementType], PlanPreview):
         # den Link zum Plan konstruieren
-        if link.count('/') == 0:
+        if link.count('/') == 0: # deal with relative Links
             link = self.url.rsplit('/', 1)[0] + '/' + link
         webPage = urllib.request.urlopen(link)
         page = html.parse(webPage)
         webPage.close()
 
         # Abfragen, ob der Plan neuer ist als der in unserer Datenbank
-        data_time = page.xpath('(((.//center//table)[1])/tr[2])/td[last()]')[0].text_content()
-        if self.times.get(key) == data_time:
+        time_data = page.xpath('(((.//center//table)[1])/tr[2])/td[last()]')[0].text_content()
+        if self.times.get(key) == time_data:
             return self.replacements[key] # überspringen, vorherigen Wert zurückgeben
         else:
-            self.times[key] = data_time # Datum eintragen
+            self.times[key] = time_data # Datum eintragen
         events = page.xpath('(.//center//table)[2]/tr[position()>1]')
+
+        del page # release the page
 
         self.replacements[key] = []
 
+        none_cases = ('\xa0', '+', '---')
+
         # Alle Vertretungen aus der Tabelle extrahieren
         for event in events:
-            cells: list = [item.text_content().strip('\n ').replace(u'\xa0', ' ')
-                            if item.text_content() != u'\xa0' else None
+            cells: list = [item.text_content().strip('\n ').replace('\xa0', ' ')
+                            if not item.text_content().strip('\n ') in none_cases else None
                             for item in event.xpath('(.//td)[position()>1]')]
             replacement: ReplacementType = dict(zip_longest(untis_html_keys, cells))
 
             self.replacements[key].append(replacement)
 
-        self.previews[key] = self.get_plan_preview(page, key)
+        if single:
+            return self.replacements[key], self.get_plan_preview(key)
+        else:
+            self.previews[key] = self.get_plan_preview(key)
+            return
 
-        return self.replacements[key]
-
-
-    # macht ein Bild vom Vertretungsplan
-    # def get_plan_preview(self, page, key: str) -> Union[discord.File, str]:
-    #     plan_img_url: str = self.db.get_plan(key, self.times[key])
-    #     if plan_img_url is not None:
-    #         return plan_img_url
-    #
-    #     # unbenutzte Tabellen entfernen
-    #     unused_tables = page.xpath('(.//center//table)[position()!=2]')
-    #     second_table = page.xpath('(.//center//table)[2]')[0]
-    #
-    #     teachers = second_table.xpath('./tr/td[3]/font')
-    #     replacers = second_table.xpath('./tr/td[5]/font')
-    #
-    #     # merge col 2 and 5 (teachers & replacers)
-    #     for i in range(0, len(teachers)):
-    #         replacer = replacers[i].text
-    #         teachers[i].tail = (' ' if teachers[i].text is not None else '') + (replacer if replacer != '---' else '')
-    #
-    #     for table in unused_tables + page.findall('.//meta') + page.xpath('((.//center//table)[2])//td[1]'):
-    #         table.getparent().remove(table)
-    #
-    #     # Header finden um Stylesheet einzufügen
-    #     header = page.find('.//head')
-    #     style = html.fromstring(page_prettifier_css[self.type]).find('.//style')
-    #     header.insert(0, style)
-    #
-    #     # Nach HTML konvertieren & newlines entfernen, die extra Spaces erzeugen
-    #     html_code: str = html.tostring(page).decode('utf-8').replace('\n', '')
-    #
-    #
-    #     filename = f'{key}_plan.png'
-    #     options: Final = {'quiet': None, 'width': 512, 'transparent': None,
-    #                       'enable-local-file-access': None, 'format': 'png',
-    #                       'encoding': "UTF-8"}
-    #
-    #     conf = imgkit.config()
-    #     if platform.system() == 'Linux':
-    #         try:
-    #             conf.get_wkhtmltoimage()
-    #         except:
-    #             conf.wkhtmltoimage = "./.apt/usr/local/bin/wkhtmltoimage"
-    #     else:
-    #         conf.wkhtmltoimage = "C:/Program Files/wkhtmltopdf/bin/wkhtmltoimage.exe"
-    #     config: Final = {
-    #         'options': options,
-    #         'config': conf
-    #     }
-    #
-    #     buf = io.BytesIO(imgkit.from_string(html_code, False, **config))
-    #     buf.seek(0)
-    #     return discord.File(buf, filename=filename)
 
 
     # macht ein Bild vom Vertretungsplan
-    def get_plan_preview(self, page, key: str) -> Union[discord.File, str]:
+    def get_plan_preview(self, key: str) -> PlanPreview:
         plan_img_url: str = self.db.get_plan(key, self.times[key])
         if plan_img_url is not None:
+            self.previews[key] = plan_img_url # put the value to the dict
             return plan_img_url
 
 
         # Nach HTML konvertieren & newlines entfernen, die extra Spaces erzeugen
-        html_code: str = create_html_preview(self.replacements[key], key)
+        html_code: str = create_html_preview(self.replacements[key])
 
 
         filename = f'{key}_plan.png'
@@ -260,15 +215,21 @@ class Page(object):
 
         buf = io.BytesIO(imgkit.from_string(html_code, False, **config))
         buf.seek(0)
-        return discord.File(buf, filename=filename)
+        return File(buf, filename=filename)
 
     # gibt den Vplan der gegebenen Klasse zurück
-    def get_plan_for_class(self, key: str) -> tuple[str, list]:
+    def get_plan_for_class(self, key: str) -> tuple[str, list[ReplacementType], PlanPreview]:
         return self.extract_data(key)
 
-    def get_plan_for_all(self) -> dict[str, list]:
+    # gibt den Vplan für alle Klassen der Seite zurück!
+    def get_plan_for_all(self) -> tuple[dict[str, list[ReplacementType]], dict[PlanPreview]]:
         self.extract_data()
-        return self.replacements
+        try:
+            return self.replacements, self.previews
+        finally:
+            for key in self.previews:
+                if type(self.previews[key]) == File:
+                    self.previews.pop(key)
 
 
     # url abfragen, Code holen!
@@ -279,16 +240,6 @@ class Page(object):
 
     def get_classes(self) -> list:
         return self.extract_data(keys_only=True)
-
-
-
-# returns all the replacements for the day
-def get_replacements(url: str = pages['untis-html'][0]) -> dict:
-    try:
-        page = Page(url)
-        return  page.replacements
-    except:
-        return None
 
 
 

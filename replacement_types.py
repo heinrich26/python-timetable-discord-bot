@@ -1,4 +1,5 @@
-from typing import TypedDict
+from typing import TypedDict, Union
+from discord import File
 
 class ReplacementType(TypedDict):
     lesson: str
@@ -8,3 +9,5 @@ class ReplacementType(TypedDict):
     room: str
     info_text: str
     type_of_replacement: str
+
+PlanPreview = Union[File, str]
