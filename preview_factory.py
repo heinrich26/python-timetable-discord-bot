@@ -14,58 +14,62 @@ stylesheet = ('''<style>
 @font-face {
     font-family: "ArialRounded";'''
 f"  src: url('{fontpath_a}');"
-''' font-weight: 700;
-}
+'''}
 
 @font-face {
-    font-family: "ArialRounded";'''
+    font-family: "ArialRoundedBold";'''
 f"    src: url('{fontpath_b}');"
-''' font-weight: 1000;
-}
+'''}
 
-center {
+table {
+    width: 600px;
+    border-spacing: 0 10px;
+    height: fit-content;
     font-family: ArialRounded;
     font-size: 200%;
-    font-weight: bold;
 }
 
-center > div {
-    box-sizing: border-box;
-    border-radius: 12px;
-    margin: 10px;
-    width: 600px;
-    display: flex;
-    align-items: center;
-    border: 2px solid rgba(0,0,0,.1)
+td > div {
+  font-family: ArialRoundedBold;
 }
 
-div.replaced {
-    background: -webkit-gradient(linear, left top, right top, color-stop(2%, #202225), color-stop(2%, #3D5AFE));
-    background: linear-gradient(90deg, #202225 2%, #3D5AFE 2%);
+tr td:first-child {
+  font-family: ArialRoundedBold;
+  text-align: center;
+  font-size: 32pt;
+  width: 30%;
+  padding: 6px 6px 0px 6px;
+  box-sizing: border-box;
+  border-color: rgba(0,0,0,.1);
+  border-style: solid;
+  border-width: 2px 0px 2px 2px;
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+  -webkit-border-top-left-radius: 5px;
+  -webkit-border-bottom-left-radius: 5px;
 }
 
-div.canceled {
-    background: linear-gradient(90deg, #202225 0%, #202225 2%, #F44336 2%, #F44336 100%);
-    background: -webkit-gradient(linear, left top, right top, color-stop(2%, #202225), color-stop(2%, #F44336));
+tr td:last-child {
+  width: 70%;
+  padding: 6px 6px 6px 0px;
+  box-sizing: border-box;
+  border-color: rgba(0,0,0,.1);
+  border-style: solid;
+  border-width: 2px 2px 2px 0px;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  -webkit-border-top-right-radius: 5px;
+  -webkit-border-bottom-right-radius: 5px;
 }
 
-center > div > div:first-child {
-    padding: 6px 0 6px 6px;
-    width: 30%;
-    font-size: 32pt;
-    text-align: center;
-    font-weight: 1000;
+tr.replaced {
+  background: -webkit-gradient(linear, left top, right top, color-stop(2%, #202225), color-stop(2%, #3D5AFE));
+  background: linear-gradient(90deg, #202225 2%, #3D5AFE 2%);
 }
 
-center > div > div:last-child {
-    width: 70%;
-    padding: 0 6px 6px 6px;
-    align: left;
-    text-align: left;
-}
-
-div > div > div:first-child {
-    font-weight: 1000;
+tr.canceled {
+  background: linear-gradient(90deg, #202225 0%, #202225 2%, #F44336 2%, #F44336 100%);
+  background: -webkit-gradient(linear, left top, right top, color-stop(2%, #202225), color-stop(2%, #F44336));
 }
 </style>''')
 
@@ -122,8 +126,8 @@ def create_replacement_tile(replacement: ReplacementType) -> str:
                  f"{' in ' + room if room is not None else ''}" + \
                  ('<br>' + info if info is not None else '')
 
-    contents = wrap_tag(replacement['lesson']) + wrap_tag(wrap_tag(repl_type) + wrap_tag(desc))
-    return wrap_tag(contents, sclass='replaced' if repl_type.lower() in replaced else 'canceled')
+    contents = wrap_tag(replacement['lesson'], 'td') + wrap_tag(wrap_tag(repl_type) + desc, 'td')
+    return wrap_tag(contents, 'tr', sclass='replaced' if repl_type.lower() in replaced else 'canceled')
 
 def convert_unicode_chars(input: str) -> str:
     if input.isalnum():
@@ -139,13 +143,13 @@ def convert_unicode_chars(input: str) -> str:
 
 @prettify_html
 def create_html_preview(replacements: list[ReplacementType], class_name: str) -> str:
-    html = stylesheet + f'<h1>Vertretungsplan der {class_name}</h1><br>' # insert a class
+    html = stylesheet #+ f'<h1>Vertretungsplan der {class_name}</h1><br>' # insert a class
 
     for replacement in sort_items(replacements):
         html += create_replacement_tile(replacement)
 
     html = '<head><meta http-equiv="content-type" content="text/html; charset=utf-8"></head>\n' + \
-            convert_unicode_chars(wrap_tag(wrap_tag(html, 'center'), 'body'))
+            convert_unicode_chars(wrap_tag(wrap_tag(html, 'table'), 'body'))
 
     return wrap_tag(html, 'html')
 
