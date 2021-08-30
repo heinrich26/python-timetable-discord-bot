@@ -161,7 +161,6 @@ class Page(object):
         events = page.xpath('(.//center//table)[2]/tr[position()>1]')
 
         self.replacements[key] = []
-        self.previews[key] = self.get_plan_preview(page, key)
 
         # Alle Vertretungen aus der Tabelle extrahieren
         for event in events:
@@ -171,6 +170,8 @@ class Page(object):
             replacement: ReplacementType = dict(zip_longest(untis_html_keys, cells))
 
             self.replacements[key].append(replacement)
+
+        self.previews[key] = self.get_plan_preview(page, key)
 
         return self.replacements[key]
 
@@ -240,9 +241,9 @@ class Page(object):
 
 
         filename = f'{key}_plan.png'
-        options: Final = {'quiet': None, 'width': 512, 'transparent': None,
+        options: Final = {'quiet': None, 'width': 640, 'transparent': None,
                           'enable-local-file-access': None, 'format': 'png',
-                          'encoding': "UTF-8"}
+                          'encoding': "UTF-8", 'disable-smart-width': None}
 
         conf = imgkit.config()
         if platform.system() == 'Linux':

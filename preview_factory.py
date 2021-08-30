@@ -21,8 +21,15 @@ f"  src: url('{fontpath_a}');"
 f"    src: url('{fontpath_b}');"
 '''}
 
+body {
+    margin: 0px;
+    width: 640px;
+    height: fit-content;
+}
+
 table {
-    width: 600px;
+    width: 620px;
+    margin: 0px 10px;
     border-spacing: 0 10px;
     height: fit-content;
     font-family: ArialRounded;
@@ -43,10 +50,8 @@ tr td:first-child {
   border-color: rgba(0,0,0,.1);
   border-style: solid;
   border-width: 2px 0px 2px 2px;
-  border-top-left-radius: 5px;
-  border-bottom-left-radius: 5px;
-  -webkit-border-top-left-radius: 5px;
-  -webkit-border-bottom-left-radius: 5px;
+  -webkit-border-top-left-radius: 7px;
+  -webkit-border-bottom-left-radius: 7px;
 }
 
 tr td:last-child {
@@ -56,20 +61,18 @@ tr td:last-child {
   border-color: rgba(0,0,0,.1);
   border-style: solid;
   border-width: 2px 2px 2px 0px;
-  border-top-right-radius: 5px;
-  border-bottom-right-radius: 5px;
-  -webkit-border-top-right-radius: 5px;
-  -webkit-border-bottom-right-radius: 5px;
+  -webkit-border-top-right-radius: 7px;
+  -webkit-border-bottom-right-radius: 7px;
 }
 
 tr.replaced {
-  background: -webkit-gradient(linear, left top, right top, color-stop(2%, #202225), color-stop(2%, #3D5AFE));
-  background: linear-gradient(90deg, #202225 2%, #3D5AFE 2%);
+  background: -webkit-gradient(linear, left top, right top, color-stop(3%, #202225), color-stop(3%, #3D5AFE));
+  background-attachment: fixed;
 }
 
 tr.canceled {
-  background: linear-gradient(90deg, #202225 0%, #202225 2%, #F44336 2%, #F44336 100%);
-  background: -webkit-gradient(linear, left top, right top, color-stop(2%, #202225), color-stop(2%, #F44336));
+  background: -webkit-gradient(linear, left top, right top, color-stop(3%, #202225), color-stop(3%, #F44336));
+  background-attachment: fixed;
 }
 </style>''')
 
@@ -79,7 +82,7 @@ class MessageData(TypedDict):
 
 def prettify_html(func):
     def wrapper_prettify_html(*args, **kwargs):
-        return BeautifulSoup(func(*args, **kwargs)).prettify()
+        return BeautifulSoup(func(*args, **kwargs), features='lxml').prettify()
     return wrapper_prettify_html
 
 # splits a List into Sublists with len() <= n
@@ -117,12 +120,13 @@ def wrap_tag(code: str, tag: str='div', sclass=None, **kwargs) -> str:
     return f"<{tag + attrs}>{str(code)}</{tag}>"
 
 def create_replacement_tile(replacement: ReplacementType) -> str:
+    teacher: str = replacement['teacher']
     replacer: str = replacement.get('replacing_teacher')
     info: str = replacement.get('info_text')
     room: str = replacement.get('room')
     repl_type: str = replacement['type_of_replacement']
     desc: str = replacement.get('subject', '') + \
-                 f" ({'' if replacer is None else (replacer + ' ')}<s>{replacement['teacher']}</s>)" + \
+                 f" ({'' if replacer is None else (replacer + ' ')}<s>{teacher if teacher != replacer else ''}</s>)" + \
                  f"{' in ' + room if room is not None else ''}" + \
                  ('<br>' + info if info is not None else '')
 
@@ -141,20 +145,19 @@ def convert_unicode_chars(input: str) -> str:
                 out += '&#' + str(ord(char)) + ';'
     return input
 
-@prettify_html
+# @prettify_html
 def create_html_preview(replacements: list[ReplacementType], class_name: str) -> str:
-    html = stylesheet #+ f'<h1>Vertretungsplan der {class_name}</h1><br>' # insert a class
+    html = stylesheet + '<table>'
 
     for replacement in sort_items(replacements):
         html += create_replacement_tile(replacement)
 
+    html += '</table>'
+
     html = '<head><meta http-equiv="content-type" content="text/html; charset=utf-8"></head>\n' + \
-            convert_unicode_chars(wrap_tag(wrap_tag(html, 'table'), 'body'))
+            convert_unicode_chars(wrap_tag(html, 'body'))
 
     return wrap_tag(html, 'html')
-
-keys = ('lesson', 'teacher', 'subject', 'replacing_teacher',
-        'room', 'info_text', 'type_of_replacement')
 
 
 if __name__ == '__main__':
