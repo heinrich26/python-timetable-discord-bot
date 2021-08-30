@@ -79,10 +79,10 @@ def build_plan(message: Message, key: str, replacements: ReplacementType, previe
 
 
 def update_database_from_msg(key: str, message: Message, bools: tuple[bool, bool]) -> None:
-    if not bool[0]:
+    if not bools[0]:
         img_db.set_attachment(key, message.embeds[0].thumbnail.url)
 
-    if not bool[1]:
+    if not bools[1]:
         link = message.embeds[-1].image.url
         img_db.set_attachment(key, link, liliplan.times[key])
         liliplan.previews[key] = link
