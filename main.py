@@ -87,6 +87,15 @@ def update_database_from_msg(key: str, message: Message, bools: tuple[bool, bool
         img_db.set_attachment(key, link, liliplan.times[key])
         liliplan.previews[key] = link
 
+def sort_classes(classes: list[str]) -> list[str]:
+    def comp(key: str):
+        i=0
+        while key[:i+1].isnumeric():
+            i+=1
+        else:
+            return key[:i], key[i:]
+
+    return sorted(classes, key=comp)
 
 
 img_db = ImageDatabase()
@@ -153,7 +162,7 @@ async def on_message(msg):
                 # Send
                 msg.channel.send(embed=embedded_msg)
             else:
-                for key in sorted(replacements.keys()):
+                for key in replacements.keys():
                     async with msg.channel.typing():
                         key, files, embed, bools = build_plan(msg, key, replacements[key], previews[key])
                         sent_msg = await msg.channel.send(files=files, embed=embed)
