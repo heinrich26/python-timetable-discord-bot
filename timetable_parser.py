@@ -144,7 +144,7 @@ class Page(object):
                 else: continue
 
     # extrahiert den Vplan für die jeweilige Klasse
-    def parse_untis_html_table(self, key, link, single: bool=True) -> tuple(list[ReplacementType], PlanPreview):
+    def parse_untis_html_table(self, key, link, single: bool=True) -> tuple[list[ReplacementType], PlanPreview]:
         # den Link zum Plan konstruieren
         if link.count('/') == 0: # deal with relative Links
             link = self.url.rsplit('/', 1)[0] + '/' + link
@@ -155,7 +155,7 @@ class Page(object):
         # Abfragen, ob der Plan neuer ist als der in unserer Datenbank
         time_data = page.xpath('(((.//center//table)[1])/tr[2])/td[last()]')[0].text_content()
         if self.times.get(key) == time_data:
-            return self.replacements[key] # überspringen, vorherigen Wert zurückgeben
+            return self.replacements[key], self.previews[key] # überspringen, vorherigen Wert zurückgeben
         else:
             self.times[key] = time_data # Datum eintragen
         events = page.xpath('(.//center//table)[2]/tr[position()>1]')
@@ -224,12 +224,7 @@ class Page(object):
     # gibt den Vplan für alle Klassen der Seite zurück!
     def get_plan_for_all(self) -> tuple[dict[str, list[ReplacementType]], dict[PlanPreview]]:
         self.extract_data()
-        try:
-            return self.replacements, self.previews
-        finally:
-            for key in self.previews:
-                if type(self.previews[key]) == File:
-                    self.previews.pop(key)
+        return self.replacements, self.previews
 
 
     # url abfragen, Code holen!

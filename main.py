@@ -53,11 +53,11 @@ def class_vplan(usr_class: str, data: list) -> Embed:
     embedded_msg.set_footer(**default_footer)
     return embedded_msg
 
-def send_plan(message: Message, key: str, replacements: ReplacementType, preview: PlanPreview) -> None:
+def build_plan(message: Message, key: str, replacements: ReplacementType, preview: PlanPreview) -> tuple[str, list, Embed, tuple[bool, bool]]:
     embed = class_vplan(key, replacements)
     embed.set_footer(**default_footer)
 
-    files = []
+    files: list = []
     thumbnail = img_db.get_icon(key)
 
     known_icon = type(thumbnail) == str
@@ -75,13 +75,15 @@ def send_plan(message: Message, key: str, replacements: ReplacementType, preview
             embed.set_image(url=f'attachment://{preview.filename}')
             files.append(preview)
 
-    sent_msg = await message.channel.send(files=files, embed=embed)
+    return key, files, embed, (known_icon, generated_plan)
 
-    if not known_icon:
-        img_db.set_attachment(key, sent_msg.embeds[0].thumbnail.url)
 
-    if not generated_plan:
-        link = sent_msg.embeds[-1].image.url
+def update_database_from_msg(key: str, message: Message, bools: tuple[bool, bool]) -> None:
+    if not bool[0]:
+        img_db.set_attachment(key, message.embeds[0].thumbnail.url)
+
+    if not bool[1]:
+        link = message.embeds[-1].image.url
         img_db.set_attachment(key, link, liliplan.times[key])
         liliplan.previews[key] = link
 
@@ -107,42 +109,59 @@ async def on_message(msg):
         if len(args) > 1: args[1] = args[1].lower()
 
         # Vertretungen abfragen
-
-        if len(args) > 2:
-            await msg.channel.send('**Ungültige Argumente!**\nVersuch mal `!vplan <Klasse>` oder `!vplan help`!')
+        if len(args) > 2: # too many Arguments
+            async with msg.channel.typing():
+                await msg.channel.send('**Ungültige Argumente!**\nVersuch mal `!vplan <Klasse>` oder `!vplan help`!')
             return
         elif len(args) == 1: pass # sending the plan for everyone comes below!
         elif len(args) == 2 and args[1] == 'help': # Send the Help
-            help_embed = Embed(title='**__Vertretungsplan Hilfe__**', description='Hier findest du alle wichtigen Commands für den Vertretungsplan!')
-            help_embed.add_field(name='**Verwendung:** `!vplan [Optionen]`', value='`ohne Args` Zeigt den kompletten Plan\n`... help` Zeigt diese Info\n`... <Klasse>` Zeigt den Plan für eine Klasse\n`... klassen` Zeigt alle Klassen die heute Vertretung haben')
-            await msg.channel.send(embed=help_embed)
+            async with msg.channel.typing():
+                help_embed = Embed(title='**__Vertretungsplan Hilfe__**',
+                                   description='Hier findest du alle wichtigen Commands für den Vertretungsplan!')
+                help_embed.add_field(name='**Verwendung:** `!vplan [Optionen]`',
+                                     value=('`ohne Args` Zeigt den kompletten Plan\n'
+                                            '`... help` Zeigt diese Info\n'
+                                            '`... <Klasse>` Zeigt den Plan für eine Klasse\n'
+                                            '`... klassen` Zeigt alle Klassen die heute Vertretung haben'))
+                await msg.channel.send(embed=help_embed)
             return
         elif args[1] in ('klassen', 'classes', 'list', 'liste'): # send all classes that have replacements at this day!
-            await msg.channel.send(f"Klassen die heute Vertretung haben:\n\n{', '.join(liliplan.get_classes())}")
+            async with msg.channel.typing():
+                await msg.channel.send(f"Klassen die heute Vertretung habensss:\n\n{', '.join(liliplan.get_classes())}")
             return
         elif args[1] == 'invite': # send an invitation Link
             await msg.channel.send(f"Du willst den Bot auch auf deinem Server haben?\n\nLad ihn hiermit ein: {invite_link}")
             return
         else: # Send the plan for one Class
-            send_plan(msg, *liliplan.get_plan_for_class(args[1]))
+            async with msg.channel.typing():
+                key, files, embed, bools = build_plan(msg, *liliplan.get_plan_for_class(args[1]))
+                sent_msg = await msg.channel.send(files=files, embed=embed)
+                update_database_from_msg(key, sent_msg, bools)
             return
 
+        async with msg.channel.typing():
+            replacements, previews = liliplan.get_plan_for_all()
 
-        replacements, previews = liliplan.get_plan_for_all()
+            if replacements is None or replacements == {}: # awww, you dont have replacements! How sad!
+                # Assemble the Embed
+                embedded_msg = Embed(title='Vertretungsplan',
+                                     description='Hier siehst du deine heutigen Vertretungen')
+                embedded_msg.add_field(name='**Keine Vertretungen heute...**',
+                                       value='\u200b', inline=False)
+                embedded_msg.set_footer(**default_footer)
 
-        if replacements is None or replacements == {}: # awww, you dont have replacements! How sad!
-            # Assemble the Embed
-            embedded_msg = Embed(title='Vertretungsplan',
-                                 description='Hier siehst du deine heutigen Vertretungen')
-            embedded_msg.add_field(name='**Keine Vertretungen heute...**',
-                                   value='\u200b', inline=False)
-            embedded_msg.set_footer(**default_footer)
-
-            # Send
-            msg.channel.send(embed=embedded_msg)
-        else:
-            for key in sorted(replacements.keys()):
-                send_plan(msg, key, replacements[key], previews[key])
+                # Send
+                msg.channel.send(embed=embedded_msg)
+            else:
+                for key in sorted(replacements.keys()):
+                    async with msg.channel.typing():
+                        key, files, embed, bools = build_plan(msg, key, replacements[key], previews[key]))
+                        sent_msg = await msg.channel.send(files=files, embed=embed)
+                        update_database_from_msg(key, sent_msg, bools)
+                # Remove files from the Previews
+                # for key in liliplan.previews:
+                #     if type(liliplan.previews[key]) == File:
+                #         liliplan.previews.pop(key)
 
 
 try:
