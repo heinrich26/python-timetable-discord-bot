@@ -112,18 +112,18 @@ class Page:
         if link.count('/') == 0:  # deal with relative Links
             link = self.url.rsplit('/', 1)[0] + '/' + link
         with urllib.request.urlopen(link) as web_page:
-            with html.parse(web_page) as page:
-                web_page.close()
+            page = html.parse(web_page):
+            web_page.close()
 
-                # Abfragen, ob der Plan neuer ist als der in unserer Datenbank
-                time_data = page.xpath(
-                    '(((.//center//table)[1])/tr[2])/td[last()]')[0].text_content()
-                if self.times.get(key) == time_data:
-                    # überspringen, vorherigen Wert zurückgeben
-                    return self.replacements[key], self.previews[key]
+            # Abfragen, ob der Plan neuer ist als der in unserer Datenbank
+            time_data = page.xpath(
+                '(((.//center//table)[1])/tr[2])/td[last()]')[0].text_content()
+            if self.times.get(key) == time_data:
+                # überspringen, vorherigen Wert zurückgeben
+                return self.replacements[key], self.previews[key]
 
-                self.times[key] = time_data  # Datum eintragen
-                events = page.xpath('(.//center//table)[2]/tr[position()>1]')
+            self.times[key] = time_data  # Datum eintragen
+            events = page.xpath('(.//center//table)[2]/tr[position()>1]')
 
         self.replacements[key] = []
 
