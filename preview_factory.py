@@ -22,20 +22,19 @@ f"    src: url('{FONT_B}');"
 
 body {
     margin: 0px;
-    width: 560px;
+    width: 580px;
     height: fit-content;
 }
 
 table {
-    width: 560px;
-    margin: 0px;
+    margin-top: -5px;
+    width: 570px;
+    margin-right: 10px;
     border-spacing: 0px 10px;
     height: fit-content;
     font-family: ArialRounded;
     font-size: 200%;
 }
-
-tr:not(:first-child) {margin-top: 10px}
 
 td > div {
   font-family: ArialRoundedBold;
