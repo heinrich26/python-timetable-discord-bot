@@ -27,9 +27,9 @@ body {
 }
 
 table {
-    width: 640px;
-    margin: 0px;
-    border-spacing: 0px;
+    width: 630px;
+    margin-right: 10px;
+    border-spacing: 0px 10px;
     height: fit-content;
     font-family: ArialRounded;
     font-size: 200%;
