@@ -79,14 +79,23 @@ def build_plan(message: Message, key: str, replacements: ReplacementType, previe
 
 
 def update_database_from_msg(key: str, message: Message, bools: tuple[bool, bool]) -> None:
-    if not bool[0]:
+    if not bools[0]:
         img_db.set_attachment(key, message.embeds[0].thumbnail.url)
 
-    if not bool[1]:
+    if not bools[1]:
         link = message.embeds[-1].image.url
         img_db.set_attachment(key, link, liliplan.times[key])
         liliplan.previews[key] = link
 
+def sort_classes(classes: list[str]) -> list[str]:
+    def comp(key: str):
+        i=0
+        while key[:i+1].isnumeric():
+            i+=1
+        else:
+            return key[:i], key[i:]
+
+    return sorted(classes, key=comp)
 
 
 img_db = ImageDatabase()
@@ -162,7 +171,33 @@ async def on_message(msg):
             update_database_from_msg(key, sent_msg, bools)
             return
 
+<<<<<<< HEAD
 
+=======
+        async with msg.channel.typing():
+            replacements, previews = liliplan.get_plan_for_all()
+
+        if replacements is None or replacements == {}: # awww, you dont have replacements! How sad!
+            # Assemble the Embed
+            embedded_msg = Embed(title='Vertretungsplan',
+                                 description='Hier siehst du deine heutigen Vertretungen')
+            embedded_msg.add_field(name='**Keine Vertretungen heute...**',
+                                   value='\u200b', inline=False)
+            embedded_msg.set_footer(**default_footer)
+
+            # Send
+            msg.channel.send(embed=embedded_msg)
+        else:
+            for key in replacements.keys():
+                async with msg.channel.typing():
+                    key, files, embed, bools = build_plan(msg, key, replacements[key], previews[key])
+                    sent_msg = await msg.channel.send(files=files, embed=embed)
+                update_database_from_msg(key, sent_msg, bools)
+                # Remove files from the Previews
+                # for key in liliplan.previews:
+                #     if type(liliplan.previews[key]) == File:
+                #         liliplan.previews.pop(key)
+>>>>>>> 95dd01ef34c32223fd3b1754ae460117634955a9
 
 
 try:
