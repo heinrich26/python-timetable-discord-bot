@@ -93,7 +93,7 @@ class Page:
                 self.parse_untis_html_table(*kv, False)
 
         key: str = key_dict.get(key.lower()) if key_dict is not None else None
-        return tuple(key, *self.parse_untis_html_table(key, data_cells[key])) if key is not None else None
+        return *((key, *self.parse_untis_html_table(key, data_cells[key])) if key is not None else tuple(None))
 
         del key_dict, key
 
