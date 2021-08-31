@@ -29,7 +29,7 @@ body {
 table {
     width: 640px;
     margin: 0px;
-    border-spacing: 0px
+    border-spacing: 0px;
     height: fit-content;
     font-family: ArialRounded;
     font-size: 200%;
