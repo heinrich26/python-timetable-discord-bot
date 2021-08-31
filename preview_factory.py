@@ -27,13 +27,15 @@ body {
 }
 
 table {
-    width: 620px;
-    margin: 0px 10px;
-    border-spacing: 0 10px;
+    width: 640px;
+    margin: 0px;
+    border-spacing: 0px
     height: fit-content;
     font-family: ArialRounded;
     font-size: 200%;
 }
+
+tr:not(:first-child) {margin-top: 10px}
 
 td > div {
   font-family: ArialRoundedBold;
@@ -65,12 +67,12 @@ tr td:last-child {
 }
 
 tr.REPLACED {
-  background: -webkit-gradient(linear, left top, right top, color-stop(3%, #202225), color-stop(3%, #3D5AFE));
+  background: -webkit-gradient(linear, left top, right top, color-stop(2%, #202225), color-stop(2%, #3D5AFE));
   background-attachment: fixed;
 }
 
 tr.canceled {
-  background: -webkit-gradient(linear, left top, right top, color-stop(3%, #202225), color-stop(3%, #F44336));
+  background: -webkit-gradient(linear, left top, right top, color-stop(2%, #202225), color-stop(2%, #F44336));
   background-attachment: fixed;
 }
 </style>''')
