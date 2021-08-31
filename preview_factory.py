@@ -1,24 +1,24 @@
-from discord import Embed, File, Colour
-from typing import TypedDict, Final
+import codecs
+import os
+from typing import Final
+from discord import Embed, Colour
 from bs4 import BeautifulSoup
-import codecs, os
-
 from replacement_types import ReplacementType
 
-replaced: Final = ('vertretung', 'betreuung')
+REPLACED: Final = ('vertretung', 'betreuung')
 
-fontpath_a = os.path.join(os.getcwd(), 'fonts/arialrounded.ttf').replace('\\', '/')
-fontpath_b = os.path.join(os.getcwd(), 'fonts/Arial_Rounded_MT_ExtraBold.ttf').replace('\\', '/')
+FONT_A = os.path.join(os.getcwd(), 'fonts/arialrounded.ttf').replace('\\', '/')
+FONT_B = os.path.join(os.getcwd(), 'fonts/Arial_Rounded_MT_ExtraBold.ttf').replace('\\', '/')
 
-stylesheet = ('''<style>
+STYLESHEET = ('''<style>
 @font-face {
     font-family: "ArialRounded";'''
-f"  src: url('{fontpath_a}');"
+f"  src: url('{FONT_A}');"
 '''}
 
 @font-face {
     font-family: "ArialRoundedBold";'''
-f"    src: url('{fontpath_b}');"
+f"    src: url('{FONT_B}');"
 '''}
 
 body {
@@ -65,7 +65,7 @@ tr td:last-child {
   -webkit-border-bottom-right-radius: 7px;
 }
 
-tr.replaced {
+tr.REPLACED {
   background: -webkit-gradient(linear, left top, right top, color-stop(3%, #202225), color-stop(3%, #3D5AFE));
   background-attachment: fixed;
 }
@@ -76,11 +76,10 @@ tr.canceled {
 }
 </style>''')
 
-class MessageData(TypedDict):
-    files: list[File]
-    embeds: list[Embed]
+
 
 def prettify_html(func):
+    '''Prettyprints the given String of HTML'''
     def wrapper_prettify_html(*args, **kwargs):
         return BeautifulSoup(func(*args, **kwargs), features='lxml').prettify()
     return wrapper_prettify_html
@@ -106,7 +105,7 @@ def create_embed(replacement: ReplacementType) -> Embed:
                  ('\n' + info) if info is not None else '')
     return Embed(title=repl_type,
                  description=desc,
-                 colour=Colour.blue() if repl_type in replaced
+                 colour=Colour.blue() if repl_type in REPLACED
                         else Colour.magenta())
 
 # Splits the Replacements and sorts them
@@ -115,11 +114,14 @@ def prepare_replacements(replacements: list[ReplacementType]) -> list[list[Repla
 
 
 def wrap_tag(code: str, tag: str='div', sclass=None, **kwargs) -> str:
+    '''surrounds the given String with the given Tag'''
     if sclass is not None: kwargs['class'] = sclass
     attrs = ' ' + ' '.join([f"{kv[0]}='{str(kv[1])}'" for kv in kwargs.items()]) if kwargs else ''
     return f"<{tag + attrs}>{str(code)}</{tag}>"
 
+
 def create_replacement_tile(replacement: ReplacementType) -> str:
+    '''Creates on HTML Row for a replacement'''
     teacher: str = replacement['teacher']
     replacer: str = replacement.get('replacing_teacher')
     info: str = replacement.get('info_text')
@@ -131,23 +133,26 @@ def create_replacement_tile(replacement: ReplacementType) -> str:
                  ('<br>' + info if info is not None else '')
 
     contents = wrap_tag(replacement['lesson'], 'td') + wrap_tag(wrap_tag(repl_type, 'div') + desc, 'td')
-    return wrap_tag(contents, 'tr', sclass='replaced' if repl_type.lower() in replaced else 'canceled')
+    return wrap_tag(contents, 'tr', sclass='REPLACED' if repl_type.lower() in REPLACED else 'canceled')
 
-def convert_unicode_chars(input: str) -> str:
-    if input.isalnum():
-        return input
-    else:
-        out = ''
-        for char in input:
-            if char in '''  \nabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890<>/!\\´`'"§$%&()[]{}?=+~*'#-_.:,;|@^°''':
-                out += char
-            else:
-                out += '&#' + str(ord(char)) + ';'
-    return input
+
+def convert_unicode_chars(inp: str) -> str:
+    '''Removes all Html-unsupported chars from the String'''
+    if inp.isalnum():
+        return inp
+
+    out = ''
+    for char in inp:
+        if char in '''  \nabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890<>/!\\´`'"§$%&()[]{}?=+~*'#-_.:,;|@^°''':
+            out += char
+        else:
+            out += '&#' + str(ord(char)) + ';'
+    return inp
 
 # @prettify_html
 def create_html_preview(replacements: list[ReplacementType]) -> str:
-    html = stylesheet + '<table>'
+    '''Writes the HTML for the given replacements'''
+    html = STYLESHEET + '<table>'
 
     for replacement in sort_items(replacements):
         html += create_replacement_tile(replacement)

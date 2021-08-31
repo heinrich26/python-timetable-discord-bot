@@ -1,43 +1,47 @@
-import os, math
+import os
+import math
 from discord import Embed, Client, Message
 
 from attachment_database import ImageDatabase
 from timetable_parser import pages, Page
 from replacement_types import ReplacementType, PlanPreview
 
-empty_field = {'name': '\u200b', 'value': '\u200b', 'inline': False}
+EMPTY_FIELD = {'name': '\u200b', 'value': '\u200b', 'inline': False}
 
-default_footer = {'text': 'Alle Angaben ohne Gewähr! Aber mit Gewehr. '}
+DEFAULT_FOOTER = {'text': 'Alle Angaben ohne Gewähr! Aber mit Gewehr. '}
 
-invite_link = 'https://discord.com/api/oauth2/authorize?client_id=489087343589064704&permissions=268594240&scope=bot'
+INVITE_LINK = 'https://discord.com/api/oauth2/authorize?client_id=489087343589064704&permissions=268594240&scope=bot'
 
 def mk_field(name: str='\u200b', value: str='\200b', inline: bool=True) -> dict:
+    '''Creates a discord.Field for the given strings'''
     return {'name': name if name else '\u200b', 'value': value if value else '\u200b', 'inline': inline}
 
-def row_for_class(class_a: dict, class_b: dict=None, header: bool=False, has_info: bool=False) -> list:
+def row_for_class(repl_a: dict, repl_b: dict=None, header: bool=False, has_info: bool=False) -> list:
+    '''Creates a list of Fields for the given replacements'''
     if header:
         row = [
-            mk_field('**Stunde**', class_a['lesson']),
-            mk_field('**Lehrer**', f"~~{class_a['teacher'] if class_a.get('teacher') is not None else ''}~~{(' ' + class_a['replacing_teacher']) if class_a.get('replacing_teacher') is not None else ''}"),
-            mk_field('**Fach**', class_a['subject']),
-            mk_field('**Raum**', class_a['room']),
+            mk_field('**Stunde**', repl_a['lesson']),
+            mk_field('**Lehrer**', f"~~{repl_a['teacher'] if repl_a.get('teacher') is not None else ''}~~{(' ' + repl_a['replacing_teacher']) if repl_a.get('replacing_teacher') is not None else ''}"),
+            mk_field('**Fach**', repl_a['subject']),
+            mk_field('**Raum**', repl_a['room']),
             # hier kommt das Info Feld hin, wenn es eins gibt!
-            mk_field('**Art**', class_a['type_of_replacement'])
+            mk_field('**Art**', repl_a['type_of_replacement'])
         ]
         if has_info:
-            row.insert(-1, mk_field('**Info**', class_a['info_text']))
+            row.insert(-1, mk_field('**Info**', repl_a['info_text']))
     else:
         row = []
         keys = ('lesson', 'subject', 'room', 'info_text', 'type_of_replacement')
         for i in range(0, 5):
             if i == 4 and not has_info: continue
             key = keys[i]
-            row.append(mk_field(class_a[key], class_b[key] if class_b else None))
-        row.insert(1, mk_field(f"~~{class_a['teacher']}~~{(' ' + class_a['replacing_teacher']) if class_a.get('replacing_teacher') is not None else ''}", None if not class_b else f"~~{class_b['teacher']}~~{(' ' + class_b['replacing_teacher']) if class_b.get('replacing_teacher') is not None else ''}"))
+            row.append(mk_field(repl_a[key], repl_b[key] if repl_b else None))
+        row.insert(1, mk_field(f"~~{repl_a['teacher']}~~{(' ' + repl_a['replacing_teacher']) if repl_a.get('replacing_teacher') is not None else ''}", None if not repl_b else f"~~{repl_b['teacher']}~~{(' ' + repl_b['replacing_teacher']) if repl_b.get('replacing_teacher') is not None else ''}"))
     return row
 
 
 def class_vplan(usr_class: str, data: list) -> Embed:
+    '''Creates an Embed for the given Replacements'''
     data = sorted(data, key=lambda e: e['lesson'])
 	# Vertretungsplan für eine Klasse
     embedded_msg = Embed(title=f'Vertretungsplan der {usr_class}', description='Hier siehst du deine heutigen Vertretungen')
@@ -46,17 +50,18 @@ def class_vplan(usr_class: str, data: list) -> Embed:
     fields = row_for_class(data[0], header=True, has_info=not no_info)
     if len(data) != 1:
         for i in range(0, math.ceil((len(data)-1)/2)):
-            fields.append(empty_field)
+            fields.append(EMPTY_FIELD)
             fields.extend(row_for_class(data[i*2+1], data[i*2+2] if i*2+2 != len(data) else None, has_info=not no_info))
     for field in fields:
         embedded_msg.add_field(**field)
     return embedded_msg
 
 
-def build_plan(message: Message, key: str, replacements: ReplacementType, preview: PlanPreview) -> tuple[str, list, Embed, tuple[bool, bool]]:
+def build_plan(key: str, replacements: ReplacementType, preview: PlanPreview) -> tuple[str, list, Embed, tuple[bool, bool]]:
+    '''Returns everything needed to send a Replacementplan as Message for the given Data'''
     # embed = class_vplan(key, replacements)
     embed = Embed(title=f'**Vertretungsplan der {key}**', description='Hier siehst du deine heutigen Vertretungen:')
-    embed.set_footer(**default_footer)
+    embed.set_footer(**DEFAULT_FOOTER)
 
     files: list = []
     thumbnail = img_db.get_icon(key)
@@ -80,6 +85,7 @@ def build_plan(message: Message, key: str, replacements: ReplacementType, previe
 
 
 def update_database_from_msg(key: str, message: Message, bools: tuple[bool, bool]) -> None:
+    '''Adds the Attachment Links from the given Message to the Database'''
     if not bools[0]:
         img_db.set_attachment(key, message.embeds[0].thumbnail.url)
 
@@ -90,6 +96,7 @@ def update_database_from_msg(key: str, message: Message, bools: tuple[bool, bool
 
 
 def sort_classes(classes: list[str]) -> list[str]:
+    '''Sorts Classes by their Identifiers/Names'''
     def comp(key: str):
         i=0
         while key[:i+1].isnumeric():
@@ -100,7 +107,8 @@ def sort_classes(classes: list[str]) -> list[str]:
     return sorted(classes, key=comp)
 
 
-def check_lastModified() -> None:
+def check_last_modified() -> None:
+    '''Deletes the Database when the Code has changed'''
     db = './attachments.db'
     if not os.path.exists(db): return
     else:
@@ -114,7 +122,7 @@ def check_lastModified() -> None:
 
 if __name__ == "__main__":
     # remove the database, if it's older than the Source Code
-    check_lastModified()
+    check_last_modified()
 
     img_db = ImageDatabase()
     liliplan = Page(pages['untis-html'][0], db=img_db)
@@ -150,13 +158,13 @@ if __name__ == "__main__":
                                              description='Hier siehst du deine heutigen Vertretungen')
                         embedded_msg.add_field(name='**Keine Vertretungen heute...**',
                                                value='\u200b', inline=False)
-                        embedded_msg.set_footer(**default_footer)
+                        embedded_msg.set_footer(**DEFAULT_FOOTER)
 
                         # Send
                         msg.channel.send(embed=embedded_msg)
                     else:
                         for key in replacements.keys():
-                            key, files, embed, bools = build_plan(msg, key, replacements[key], previews[key])
+                            key, files, embed, bools = build_plan(key, replacements[key], previews[key])
                             sent_msg = await msg.channel.send(files=files, embed=embed)
                             update_database_from_msg(key, sent_msg, bools)
                         # Remove files from the Previews
@@ -177,13 +185,13 @@ if __name__ == "__main__":
                 await msg.channel.trigger_typing()
                 info_embed = Embed(title='**Klassen die heute Vertretung haben**:',
                 description=f"`{'`, `'.join(liliplan.get_classes())}`\n\n Verwende `!vplan <Klasse>` um einen bestimmten Plan zu sehen!")
-                info_embed.set_footer(**default_footer)
+                info_embed.set_footer(**DEFAULT_FOOTER)
                 await msg.channel.send(embed=info_embed)
             elif args[1] == 'invite': # send an invitation Link
-                await msg.channel.send(f"Du willst den Bot auch auf deinem Server haben?\n\nLad ihn hiermit ein: {invite_link}")
+                await msg.channel.send(f"Du willst den Bot auch auf deinem Server haben?\n\nLad ihn hiermit ein: {INVITE_LINK}")
             else: # Send the plan for one Class
                 async with msg.channel.typing():
-                    key, files, embed, bools = build_plan(msg, *liliplan.get_plan_for_class(args[1]))
+                    key, files, embed, bools = build_plan(*liliplan.get_plan_for_class(args[1]))
                     sent_msg = await msg.channel.send(files=files, embed=embed)
                 update_database_from_msg(key, sent_msg, bools)
 
