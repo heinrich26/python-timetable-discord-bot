@@ -121,27 +121,28 @@ class Page(object):
                       for cell in tables[1].iterfind('.//td/a')}
 
         # nur die Klassen mit Vertretungen zurückgeben!
-        if keys_only: return data_cells.keys()
+        if keys_only:
+            return data_cells.keys()
+        else:
+            key_dict = {item.lower():item for item in data_cells} if key else None
+            # Vplan für alle Klassen konstruieren
+            if key is None:
+                # die Vertretungen für die all Klassen ermitteln
+                for kv in data_cells.items():
+                    self.parse_untis_html_table(*kv, False)
+            elif key.lower() in key_dict:
+                key = key_dict[key.lower()]
+                return key, *self.parse_untis_html_table(key, data_cells[key])
+            else: return None
+            del key_dict, key
 
-        key_dict = {item.lower():item for item in data_cells} if key else None
-        # Vplan für alle Klassen konstruieren
-        if key is None:
-            # die Vertretungen für die einzelnen Klassen ermitteln
-            for kv in data_cells.items():
-                self.parse_untis_html_table(*kv, False)
-        elif key.lower() in key_dict:
-            key = key_dict[key.lower()]
-            return key, *self.parse_untis_html_table(key, data_cells[key])
-        else: return None
-        del key_dict, key
-
-        # nicht mehr vorkommene Elemente löschen
-        if len(data_cells) != len(self.replacements):
-            for class_repl in self.replacements:
-                if not class_repl in data_cells:
-                    self.replacements.pop(class_repl)
-                    self.previews.pop(class_repl)
-                else: continue
+            # nicht mehr vorkommene Elemente löschen
+            if len(data_cells) != len(self.replacements):
+                for class_repl in self.replacements:
+                    if not class_repl in data_cells:
+                        self.replacements.pop(class_repl)
+                        self.previews.pop(class_repl)
+                    else: continue
 
     # extrahiert den Vplan für die jeweilige Klasse
     def parse_untis_html_table(self, key, link, single: bool=True) -> tuple[list[ReplacementType], PlanPreview]:
@@ -198,7 +199,7 @@ class Page(object):
         filename = f'{key}_plan.png'
         options: Final = {'quiet': None, 'width': 640, 'transparent': None,
                           'enable-local-file-access': None, 'format': 'png',
-                          'encoding': "UTF-8", 'disable-smart-width': None}
+                          'encoding': "UTF-8"}
 
         conf = imgkit.config()
         if platform.system() == 'Linux':

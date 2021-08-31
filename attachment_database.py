@@ -25,7 +25,7 @@ class ImageDatabase(object):
         # create the Image
         if link is None:
             img = Image.new("RGBA", (img_res, img_res), (0, 0, 0, 0))
-            font = ImageFont.truetype("fonts/arialrounded.ttf", 200)
+            font = ImageFont.truetype("fonts/arialrounded.ttf", int(105 * (4 / (len(key) - key.count('.')))))
 
             draw = ImageDraw.Draw(img)
             draw.text((img_res / 2, img_res / 2), key, anchor='mm', font=font, fill=(142, 146, 151))
