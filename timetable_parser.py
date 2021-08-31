@@ -86,16 +86,21 @@ class Page:
             return data_cells.keys()
 
         key_dict = {item.lower(): item for item in data_cells} if key else None
-        # Vplan für alle Klassen konstruieren
-        if key is None:
-            # die Vertretungen für die all Klassen ermitteln
-            for kv in data_cells.items():
-                self.parse_untis_html_table(*kv, False)
+        # Vplan für einzelne Klasse konstruieren
+        if key is not None:
+            if key_dict is None: return None
 
-        key: str = key_dict.get(key.lower()) if key_dict is not None else None
-        return *((key, *self.parse_untis_html_table(key, data_cells[key])) if key is not None else tuple(None))
+            key: str = key_dict.get(key.lower())
+
+            if key is None: return None
+
+            return key, *self.parse_untis_html_table(key, data_cells[key])
 
         del key_dict, key
+        # die Vertretungen für die alle Klassen ermitteln
+        for kv in data_cells.items():
+            self.parse_untis_html_table(*kv, False)
+        
 
         # nicht mehr vorkommene Elemente löschen
         if len(data_cells) != len(self.replacements):
