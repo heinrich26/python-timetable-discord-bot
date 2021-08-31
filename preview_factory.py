@@ -22,13 +22,13 @@ f"    src: url('{FONT_B}');"
 
 body {
     margin: 0px;
-    width: 580px;
+    width: 500px;
     height: fit-content;
 }
 
 table {
     margin-top: -5px;
-    width: 570px;
+    width: 490px;
     margin-right: 10px;
     border-spacing: 0px 10px;
     height: fit-content;
