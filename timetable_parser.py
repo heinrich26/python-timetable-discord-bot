@@ -9,6 +9,7 @@ from discord import File
 from lxml import html
 from preview_factory import create_html_preview
 from replacement_types import ReplacementType, PlanPreview
+from attachment_database import ImageDatabase
 
 
 # die Webseitentypen mit bekannten URLs
@@ -30,34 +31,38 @@ IMG_CACHE_PATH = "./img_cache"
 
 
 def check_cache_dir():
+    '''Ensures that the Cache directory exists'''
     if not os.path.exists(IMG_CACHE_PATH):
         os.mkdir(IMG_CACHE_PATH)
 
 
 # Klasse für die Webseitenobjekte
 class Page:
-    def __init__(self, url: str = PAGES['untis-html'][0], overview=True, db=None):
+    '''Klasse für Vertetungsplan Webseiten
+    Extrahiert Vertretungen & produziert Previews'''
+
+    def __init__(self, url: str = PAGES['untis-html'][0], database: ImageDatabase = None):
         self.url: Final = url
 
         self.replacements: dict = {}
         self.times: dict = {}
         self.previews: dict = {}
 
-        self.db = db
+        self.database = database
 
         check_cache_dir()
 
         # den Websitetypen bestimmen
         self.page_type: str = None
-        for type in PAGES:
-            if url in PAGES[type]:
-                self.page_type = type
+        for page_item in PAGES.items():
+            if url in page_item[1]:
+                self.page_type = page_item[0]
                 break
 
         if self.page_type is not None:
             self.extract_data()
 
-    def extract_data(self, key: str = None, keys_only: bool = False) -> Union[tuple[str, list[ReplacementType], PlanPreview], dict[list[ReplacementType]]]:
+    def extract_data(self, key: str = None, keys_only: bool = False) -> Union[tuple[str, list[ReplacementType], PlanPreview], dict[list[ReplacementType]], None]:
         '''Führt die Funktionen für den jeweiligen Websitetypen aus'''
         self.refresh_page()
         if self.page_type is None:
@@ -65,7 +70,7 @@ class Page:
         elif self.page_type == 'untis-html':
             return self.parse_untis_html(key, keys_only)
 
-    def parse_untis_html(self, key: str = None, keys_only: bool = False) -> Union[tuple[str, list[ReplacementType], PlanPreview], dict[list[ReplacementType]]]:
+    def parse_untis_html(self, key: str = None, keys_only: bool = False) -> Union[tuple[str, list[ReplacementType], PlanPreview], dict[list[ReplacementType]], None]:
         '''Extrahiert die Klassen & Links aus der Webseite'''
         # 2. Tabelle auswählen
         tables = self.page.findall('//center//table')
@@ -117,8 +122,8 @@ class Page:
                 if self.times.get(key) == time_data:
                     # überspringen, vorherigen Wert zurückgeben
                     return self.replacements[key], self.previews[key]
-                else:
-                    self.times[key] = time_data  # Datum eintragen
+
+                self.times[key] = time_data  # Datum eintragen
                 events = page.xpath('(.//center//table)[2]/tr[position()>1]')
 
         self.replacements[key] = []
@@ -137,13 +142,13 @@ class Page:
 
         if single:
             return self.replacements[key], self.get_plan_preview(key)
-        else:
-            self.previews[key] = self.get_plan_preview(key)
-            return None
+
+        self.previews[key] = self.get_plan_preview(key)
+        return None
 
     def get_plan_preview(self, key: str) -> PlanPreview:
         '''Produziert die Preview für den Vertretungsplan'''
-        plan_img_url: str = self.db.get_plan(key, self.times[key])
+        plan_img_url: str = self.database.get_plan(key, self.times[key])
         if plan_img_url is not None:
             self.previews[key] = plan_img_url  # put the value to the dict
             return plan_img_url
@@ -188,11 +193,11 @@ class Page:
             self.page = html.parse(web_page)
 
     def get_classes(self) -> list:
+        '''Gibt alle Klassen mit Vertretungen zurück'''
         return self.extract_data(keys_only=True)
 
 
 if __name__ == '__main__':
-    from attachment_database import ImageDatabase
-    example_page = Page(PAGES['untis-html'][0], db=ImageDatabase())
+    example_page = Page(PAGES['untis-html'][0], database=ImageDatabase())
 
     print(example_page.replacements)
