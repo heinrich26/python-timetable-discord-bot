@@ -1,4 +1,4 @@
-![example workflow](https://github.com/heinrich26/python-timetable-discord-bot/actions/workflows/pylint.yml/artifacts/badge.svg)
+![example workflow](https://github.com/heinrich26/python-timetable-discord-bot/actions/workflows/pylint.yml/badge.svg)
 
 # python-timetable-discord-bot
 
