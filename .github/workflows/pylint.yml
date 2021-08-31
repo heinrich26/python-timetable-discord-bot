@@ -2,7 +2,7 @@ name: Pylint
 
 on:
   push:
-  workflow-dispatch:
+  workflow_dispatch:
 
 jobs:
   build:
