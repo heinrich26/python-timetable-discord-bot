@@ -2,7 +2,6 @@ import codecs
 import os
 from typing import Final
 from discord import Embed, Colour
-from bs4 import BeautifulSoup
 from replacement_types import ReplacementType
 
 REPLACED: Final = ('vertretung', 'betreuung')
@@ -78,23 +77,19 @@ tr.canceled {
 
 
 
-def prettify_html(func):
-    '''Prettyprints the given String of HTML'''
-    def wrapper_prettify_html(*args, **kwargs):
-        return BeautifulSoup(func(*args, **kwargs), features='lxml').prettify()
-    return wrapper_prettify_html
-
 # splits a List into Sublists with len() <= n
-def chunks(list: list, n: int):
+def chunks(items: list, n: int):
     """Yield successive n-sized chunks from lst."""
-    for i in range(0, len(list), n):
-        yield list[i:i + n]
+    for i in range(0, len(items), n):
+        yield items[i:i + n]
 
 def sort_items(replacements: list[ReplacementType]) -> list[ReplacementType]:
+    '''Sorts the Replacements by Lesson'''
     return sorted(replacements, key=lambda key: key.get('lesson'))
 
 
 def create_embed(replacement: ReplacementType) -> Embed:
+    '''Creates an Embed Tile for a Replacement'''
     replacer: str = replacement.get('replacing_teacher')
     info: str = replacement.get('info')
     room: str = replacement.get('room')
@@ -106,18 +101,24 @@ def create_embed(replacement: ReplacementType) -> Embed:
     return Embed(title=repl_type,
                  description=desc,
                  colour=Colour.blue() if repl_type in REPLACED
-                        else Colour.magenta())
+                 else Colour.magenta())
+
 
 # Splits the Replacements and sorts them
 def prepare_replacements(replacements: list[ReplacementType]) -> list[list[ReplacementType]]:
+    '''Applies the Embed limits of discord'''
     return chunks(sort_items(replacements), 10)
 
 
-def wrap_tag(code: str, tag: str='div', sclass=None, **kwargs) -> str:
-    '''surrounds the given String with the given Tag'''
-    if sclass is not None: kwargs['class'] = sclass
-    attrs = ' ' + ' '.join([f"{kv[0]}='{str(kv[1])}'" for kv in kwargs.items()]) if kwargs else ''
+def wrap_tag(code: str, tag: str = 'div', sclass=None, **kwargs) -> str:
+    '''Surrounds the given String with the given Tag'''
+    if sclass is not None:
+        kwargs['class'] = sclass
+    attrs = ' ' + \
+            ' '.join([f"{kv[0]}='{str(kv[1])}'" for kv in kwargs.items()]) \
+            if kwargs else ''
     return f"<{tag + attrs}>{str(code)}</{tag}>"
+
 
 
 def create_replacement_tile(replacement: ReplacementType) -> str:
@@ -149,7 +150,8 @@ def convert_unicode_chars(inp: str) -> str:
             out += '&#' + str(ord(char)) + ';'
     return inp
 
-# @prettify_html
+
+
 def create_html_preview(replacements: list[ReplacementType]) -> str:
     '''Writes the HTML for the given replacements'''
     html = STYLESHEET + '<table>'
@@ -160,25 +162,30 @@ def create_html_preview(replacements: list[ReplacementType]) -> str:
     html += '</table>'
 
     html = '<head><meta http-equiv="content-type" content="text/html; charset=utf-8"></head>\n' + \
-            wrap_tag(html, 'body') #convert_unicode_chars(wrap_tag(html, 'body'))
+        wrap_tag(html, 'body')  # convert_unicode_chars(wrap_tag(html, 'body'))
 
     return wrap_tag(html, 'html')
 
 
+
+
 if __name__ == '__main__':
-    replacements = [{
-            'lesson': '1', 'teacher': 'Ks', 'subject': 'GEO', 'replacing_teacher': 'Gw',
-            'room': 'B108', 'info_text': None, 'type_of_replacement': 'Vertretung'
-        }, {
-            'lesson': '1-2', 'teacher': 'Mv', 'subject': 'SP', 'replacing_teacher': 'V\u00F6',
-            'room': 'G\u00D6E', 'info_text': None, 'type_of_replacement': 'Vertretung'
-        }, {
-            'lesson': '3-4', 'teacher': 'So', 'subject': 'BIO', 'replacing_teacher': None,
-            'room': 'A106', 'info_text': None, 'type_of_replacement': 'Entfall'
-        }, {
-            'lesson': '7', 'teacher': 'Tm', 'subject': 'DE', 'replacing_teacher': None,
-            'room': 'OBR', 'info_text': 'OPfer kinder tralllalalalallalala', 'type_of_replacement': 'EVA'
-        }]
+    example_replacements = [{
+        'lesson': '1', 'teacher': 'Ks', 'subject': 'GEO',
+        'replacing_teacher': 'Gw', 'room': 'B108', 'info_text': None,
+        'type_of_replacement': 'Vertretung'
+    }, {
+        'lesson': '1-2', 'teacher': 'Mv', 'subject': 'SP', 'info_text': None,
+        'replacing_teacher': 'V\u00F6', 'room': 'G\u00D6E',
+        'type_of_replacement': 'Vertretung'
+    }, {
+        'lesson': '3-4', 'teacher': 'So', 'subject': 'BIO', 'replacing_teacher': None,
+        'room': 'A106', 'info_text': None, 'type_of_replacement': 'Entfall'
+    }, {
+        'lesson': '7', 'teacher': 'Tm', 'subject': 'DE', 'replacing_teacher': None,
+        'room': 'OBR', 'info_text': 'OPfer kinder tralllalalalallalala',
+        'type_of_replacement': 'EVA'
+    }]
 
     with codecs.open('tiles.html', 'w', 'utf-8') as f:
-        f.write(create_html_preview(replacements, 'Q1'))
+        f.write(create_html_preview(example_replacements, 'Q1'))
