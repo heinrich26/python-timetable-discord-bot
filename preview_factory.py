@@ -22,13 +22,13 @@ f"    src: url('{FONT_B}');"
 
 body {
     margin: 0px;
-    width: 640px;
+    width: 600px;
     height: fit-content;
 }
 
 table {
-    width: 630px;
-    margin-right: 10px;
+    width: 600px;
+    margin: 0px;
     border-spacing: 0px 10px;
     height: fit-content;
     font-family: ArialRounded;
