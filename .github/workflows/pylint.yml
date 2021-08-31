@@ -1,6 +1,9 @@
 name: Pylint
 
-on: [push, workflow_run]
+on: 
+  push:
+  workflow_dispatch:
+  
 
 jobs:
   build:
