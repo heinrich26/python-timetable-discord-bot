@@ -3,7 +3,7 @@ import math
 from discord import Embed, Client, Message
 
 from attachment_database import ImageDatabase
-from timetable_parser import pages, Page
+from timetable_parser import PAGES, Page
 from replacement_types import ReplacementType, PlanPreview
 
 EMPTY_FIELD = {'name': '\u200b', 'value': '\u200b', 'inline': False}
@@ -118,16 +118,16 @@ def sort_classes(classes: list[str]) -> list[str]:
 
 def check_last_modified() -> None:
     '''Deletes the Database when the Code has changed'''
-    db = './attachments.db'
-    if not os.path.exists(db):
+    database = './attachments.db'
+    if not os.path.exists(database):
         return
 
     files = ('main.py', 'preview_factory.py',
              'timetable_parser.py', 'attachment_database.py')
-    db_last_mod = os.path.getmtime(db)
+    db_last_mod = os.path.getmtime(database)
     for file in files:
         if db_last_mod < os.path.getmtime(file):
-            os.remove(db)
+            os.remove(database)
             break
 
 
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     check_last_modified()
 
     img_db = ImageDatabase()
-    liliplan = Page(pages['untis-html'][0], db=img_db)
+    liliplan = Page(PAGES['untis-html'][0], db=img_db)
 
     client = Client()
 
@@ -185,9 +185,9 @@ if __name__ == "__main__":
                     # Send
                     msg.channel.send(embed=embedded_msg)
                 else:
-                    for key in replacements:
+                    for item in replacements.items():
                         key, files, embed, bools = build_plan(
-                            key, replacements[key], previews[key])
+                            item[0], [], previews[item[0]])
                         sent_msg = await msg.channel.send(files=files, embed=embed)
                         update_database_from_msg(key, sent_msg, bools)
                     # Remove files from the Previews

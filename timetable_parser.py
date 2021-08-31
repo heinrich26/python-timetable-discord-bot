@@ -91,11 +91,10 @@ class Page:
             # die Vertretungen für die all Klassen ermitteln
             for kv in data_cells.items():
                 self.parse_untis_html_table(*kv, False)
-        elif key.lower() in key_dict:
-            key = key_dict[key.lower()]
-            return key, *self.parse_untis_html_table(key, data_cells[key])
-        else:
-            return None
+
+        key: str = key_dict.get(key.lower())
+        return tuple(key, *self.parse_untis_html_table(key, data_cells[key])) if key is not None else None
+
         del key_dict, key
 
         # nicht mehr vorkommene Elemente löschen

@@ -14,8 +14,8 @@ class ImageDatabase:
 
     def __init__(self, name: str = 'attachments.db'):
         create_tables = not os.path.exists(name)
-        self.db = sqlite3.connect(name)
-        self.cursor = self.db.cursor()
+        self.database = sqlite3.connect(name)
+        self.cursor = self.database.cursor()
 
         if create_tables:
             self.cursor.execute('CREATE TABLE icons (key text, link text)')
@@ -27,7 +27,7 @@ class ImageDatabase:
         self.cursor.execute(
             'SELECT link FROM icons WHERE key = ?', [f'{key}_icon'])
         link = self.cursor.fetchone()
-        self.cursor = self.db.cursor()
+        self.cursor = self.database.cursor()
 
         # create the Image
         if link is None:
@@ -52,18 +52,18 @@ class ImageDatabase:
         key = [f'{key}_plan']
         self.cursor.execute('SELECT * FROM plans WHERE key = ?', key)
         result = self.cursor.fetchone()
-        self.cursor = self.db.cursor()
+        self.cursor = self.database.cursor()
 
         if result is None:
             return None
 
         if date == result[2]:
             return result[1]
-        else:
-            self.cursor.execute('DELETE FROM plans WHERE key = ?', key)
-            self.db.commit()
 
-            return None
+        self.cursor.execute('DELETE FROM plans WHERE key = ?', key)
+        self.database.commit()
+
+        return None
 
     def set_attachment(self, key: str, link: str, date: str = None):
         '''Sets the Attachment Link for the given key'''
@@ -71,8 +71,8 @@ class ImageDatabase:
                             (f'{key}_icon', link)) if date is None else
                             ('INSERT INTO plans VALUES (?, ?, ?)',
                             (f'{key}_plan', link, date)))
-        self.db.commit()
+        self.database.commit()
 
     def __del__(self):
-        self.db.commit()
-        self.db.close()
+        self.database.commit()
+        self.database.close()
