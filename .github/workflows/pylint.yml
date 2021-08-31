@@ -16,11 +16,22 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.9
-    - name: Install dependencies
+    - name: Install dependencies & prepare Badge
       run: |
         python -m pip install --upgrade pip
-        pip install pylint
+        pip install pylint pylint-exit anybadge
         pip install -r requirements.txt
+        mkdir ./pylint
     - name: Analysing the code with pylint
       run: |
-        pylint `ls -R|grep .py$|xargs`
+        pylint --output-format=text --fail-unter 8.0 `ls -R|grep .py$|xargs` | tee ./pylint/pylint.log || pylint-exit $?
+        PYLINT_SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' ./pylint/pylint.log)
+        anybadge --label=Pylint --file=pylint/pylint.svg --value=$PYLINT_SCORE 2=red 4=orange 8=yellow 10=green
+        
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.4
+      with:
+        # Artifact name
+        name: pylint.svg
+        # A file, directory or wildcard pattern that describes what to upload
+        path: ./pylint/pylint.svg
