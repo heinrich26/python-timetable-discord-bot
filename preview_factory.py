@@ -22,12 +22,12 @@ f"    src: url('{FONT_B}');"
 
 body {
     margin: 0px;
-    width: 600px;
+    width: 560px;
     height: fit-content;
 }
 
 table {
-    width: 600px;
+    width: 560px;
     margin: 0px;
     border-spacing: 0px 10px;
     height: fit-content;
