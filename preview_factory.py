@@ -126,11 +126,11 @@ def create_replacement_tile(replacement: ReplacementType) -> str:
     room: str = replacement.get('room')
     repl_type: str = replacement['type_of_replacement']
     desc: str = replacement.get('subject', '') + \
-                 f" ({'' if replacer is None else (replacer + ' ')}<s>{teacher if teacher != replacer else ''}</s>)" + \
+                 f" ({'' if replacer is None else (replacer + ' ')}{wrap_tag(teacher, 's') if teacher != replacer else ''})" + \
                  f"{' in ' + room if room is not None else ''}" + \
                  ('<br>' + info if info is not None else '')
 
-    contents = wrap_tag(replacement['lesson'], 'td') + wrap_tag(wrap_tag(repl_type) + desc, 'td')
+    contents = wrap_tag(replacement['lesson'], 'td') + wrap_tag(wrap_tag(repl_type, 'div') + desc, 'td')
     return wrap_tag(contents, 'tr', sclass='replaced' if repl_type.lower() in replaced else 'canceled')
 
 def convert_unicode_chars(input: str) -> str:
@@ -155,7 +155,7 @@ def create_html_preview(replacements: list[ReplacementType]) -> str:
     html += '</table>'
 
     html = '<head><meta http-equiv="content-type" content="text/html; charset=utf-8"></head>\n' + \
-            convert_unicode_chars(wrap_tag(html, 'body'))
+            wrap_tag(html, 'body') #convert_unicode_chars(wrap_tag(html, 'body'))
 
     return wrap_tag(html, 'html')
 
