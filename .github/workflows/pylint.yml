@@ -24,7 +24,7 @@ jobs:
         mkdir ./pylint
     - name: Analysing the code with pylint
       run: |
-        pylint --output-format=text --fail-unter 8.0 `ls -R|grep .py$|xargs` | tee ./pylint/pylint.log || pylint-exit $?
+        pylint --output-format=text --fail-unter=8 `ls -R|grep .py$|xargs` | tee ./pylint/pylint.log || pylint-exit $?
         PYLINT_SCORE=$(sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p' ./pylint/pylint.log)
         anybadge --label=Pylint --file=pylint/pylint.svg --value=$PYLINT_SCORE 2=red 4=orange 8=yellow 10=green
         
