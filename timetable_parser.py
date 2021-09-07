@@ -139,8 +139,11 @@ class Page:
             cells: list = [item.text_content().strip('\n ').replace('\xa0', ' ')
                            if not item.text_content().strip('\n ') in none_cases else None
                            for item in event.xpath('(.//td)[position()>1]')]
-            replacement: ReplacementType = dict(
-                zip_longest(UNTIS_HTML_KEYS, cells))
+            replacement: ReplacementType = {k:v for k, v in
+                dict(zip_longest(UNTIS_HTML_KEYS, cells)).items() if v is not None}
+                
+            
+                
 
             self.replacements[key].append(replacement)
 
