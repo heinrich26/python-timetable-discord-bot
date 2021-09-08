@@ -22,14 +22,15 @@ f"    src: url('{FONT_B}');"
 
 body {
     margin: 0px;
-    width: 640px;
+    width: 500px;
     height: fit-content;
 }
 
 table {
-    width: 620px;
-    margin: 0px 10px;
-    border-spacing: 0 10px;
+    margin-top: -5px;
+    width: 490px;
+    margin-right: 10px;
+    border-spacing: 0px 10px;
     height: fit-content;
     font-family: ArialRounded;
     font-size: 200%;
@@ -65,12 +66,12 @@ tr td:last-child {
 }
 
 tr.REPLACED {
-  background: -webkit-gradient(linear, left top, right top, color-stop(3%, #202225), color-stop(3%, #3D5AFE));
+  background: -webkit-gradient(linear, left top, right top, color-stop(2%, #202225), color-stop(2%, #3D5AFE));
   background-attachment: fixed;
 }
 
 tr.canceled {
-  background: -webkit-gradient(linear, left top, right top, color-stop(3%, #202225), color-stop(3%, #F44336));
+  background: -webkit-gradient(linear, left top, right top, color-stop(2%, #202225), color-stop(2%, #F44336));
   background-attachment: fixed;
 }
 </style>''')

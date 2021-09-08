@@ -116,16 +116,21 @@ class Page:
             return data_cells.keys()
 
         key_dict = {item.lower(): item for item in data_cells} if key else None
-        # Vplan für alle Klassen konstruieren
-        if key is None:
-            # die Vertretungen für die all Klassen ermitteln
-            for kv in data_cells.items():
-                self.parse_untis_html_table(*kv, False)
+        # Vplan für einzelne Klasse konstruieren
+        if key is not None:
+            if key_dict is None: return None
 
-        key: str = key_dict.get(key.lower())
-        return tuple(key, *self.parse_untis_html_table(key, data_cells[key])) if key is not None else None
+            key: str = key_dict.get(key.lower())
+
+            if key is None: return None
+
+            return key, *self.parse_untis_html_table(key, data_cells[key])
 
         del key_dict, key
+        # die Vertretungen für die alle Klassen ermitteln
+        for kv in data_cells.items():
+            self.parse_untis_html_table(*kv, False)
+        
 
         # nicht mehr vorkommene Elemente löschen
         if len(data_cells) != len(self.replacements):
@@ -142,18 +147,18 @@ class Page:
         if link.count('/') == 0:  # deal with relative Links
             link = self.url.rsplit('/', 1)[0] + '/' + link
         with urllib.request.urlopen(link) as web_page:
-            with html.parse(web_page) as page:
-                web_page.close()
+            page = html.parse(web_page)
+  
 
-                # Abfragen, ob der Plan neuer ist als der in unserer Datenbank
-                time_data = page.xpath(
-                    '(((.//center//table)[1])/tr[2])/td[last()]')[0].text_content()
-                if self.times.get(key) == time_data:
-                    # überspringen, vorherigen Wert zurückgeben
-                    return self.replacements[key], self.previews[key]
+        # Abfragen, ob der Plan neuer ist als der in unserer Datenbank
+        time_data = page.xpath(
+            '(((.//center//table)[1])/tr[2])/td[last()]')[0].text_content()
+        if self.times.get(key) == time_data:
+            # überspringen, vorherigen Wert zurückgeben
+            return self.replacements[key], self.previews[key]
 
-                self.times[key] = time_data  # Datum eintragen
-                events = page.xpath('(.//center//table)[2]/tr[position()>1]')
+        self.times[key] = time_data  # Datum eintragen
+        events = page.xpath('(.//center//table)[2]/tr[position()>1]')
 
         self.replacements[key] = []
 
@@ -164,8 +169,11 @@ class Page:
             cells: list = [item.text_content().strip('\n ').replace('\xa0', ' ')
                            if not item.text_content().strip('\n ') in none_cases else None
                            for item in event.xpath('(.//td)[position()>1]')]
-            replacement: ReplacementType = dict(
-                zip_longest(UNTIS_HTML_KEYS, cells))
+            replacement: ReplacementType = {k:v for k, v in
+                dict(zip_longest(UNTIS_HTML_KEYS, cells)).items() if v is not None}
+                
+            
+                
 
             self.replacements[key].append(replacement)
 

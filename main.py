@@ -136,7 +136,7 @@ if __name__ == "__main__":
     check_last_modified()
 
     img_db = ImageDatabase()
-    liliplan = Page(PAGES['untis-html'][0], db=img_db)
+    liliplan = Page(PAGES['untis-html'][0], database=img_db)
 
     client = Client()
 
@@ -214,12 +214,12 @@ if __name__ == "__main__":
         elif args[1] == 'invite':  # send an invitation Link
             await msg.channel.send(f"Du willst den Bot auch auf deinem Server haben?\n\nLad ihn hiermit ein: {INVITE_LINK}")
         else:  # Send the plan for one Class
-            async with msg.channel.typing():
-                key, files, embed, bools = build_plan(
-                    *liliplan.get_plan_for_class(args[1]))
-                sent_msg = await msg.channel.send(files=files, embed=embed)
+            await msg.channel.trigger_typing()
+            key, files, embed, bools = build_plan(
+                *liliplan.get_plan_for_class(args[1]))
+            sent_msg = await msg.channel.send(files=files, embed=embed)
             update_database_from_msg(key, sent_msg, bools)
 
 
-client.run(os.environ['BOT_TOKEN'] if 'BOT_TOKEN' in os.environ else open(
-    'token_secret', 'r', encoding='utf-8').readlines()[0])
+    client.run(os.environ['BOT_TOKEN'] if 'BOT_TOKEN' in os.environ else open(
+        'token_secret', 'r', encoding='utf-8').readlines()[0])
