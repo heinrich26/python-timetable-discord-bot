@@ -11,14 +11,32 @@ from preview_factory import create_html_preview
 from replacement_types import ReplacementType, PlanPreview
 from attachment_database import ImageDatabase
 
+UNTIS_HTML: Final = 'untis-html'
+DSB_MOBILE: Final = 'dsb-mobile'
+
 
 # die Webseitentypen mit bekannten URLs
 PAGES: Final = {
-    'untis-html': ["https://www.lilienthal-gymnasium-berlin.de/interna/vplan/Druck_Kla.htm"]
+    UNTIS_HTML: ['https://www.lilienthal-gymnasium-berlin.de/interna/vplan/Druck_Kla.htm'],
+    DSB_MOBILE: ['https://willi-graf-gymnasium.de/']
 }
 
 UNTIS_HTML_KEYS: Final = ('lesson', 'teacher', 'subject', 'replacing_teacher',
                           'room', 'info_text', 'type_of_replacement')
+
+DSB_MOBILE_KEYS: Final = {
+    'https://willi-graf-gymnasium.de/': {
+        'keys': ('lesson', 'replacing_teacher', 'teacher', 'subject', 'room', 'info_text'),
+        'event_cases': {
+            'Vorverlegt': ['vorverlegt', 'vorziehung', 'vorgezogen'],
+            'Raumänderung': ['raumänderung', 'raumvertretung'],
+            'Vertretung': ['vertretung'],
+            'Entfall': ['entfällt', 'fällt aus'],
+            'Aufgaben': ['aa in', 'aa von']
+        },
+        'id': 'willi'
+    } # ... more DSB Schools, meeeh
+}
 
 # construct the absolute path for the fonts
 FONT_A = os.path.join(
@@ -34,6 +52,16 @@ def check_cache_dir():
     '''Ensures that the Cache directory exists'''
     if not os.path.exists(IMG_CACHE_PATH):
         os.mkdir(IMG_CACHE_PATH)
+
+def load_credentials(path: str, id: str):
+    uname = os.environ.get(f'{id}_uname')
+    if uname is not None:
+        return uname, os.environ.get(f'{id}_pw')
+
+    with open(path, encoding='utf-8', mode='r') as file:
+        uname, password = file.readlines()[:2]
+
+    return uname.strip(), password.strip()
 
 
 # Klasse für die Webseitenobjekte
@@ -62,6 +90,7 @@ class Page:
         if self.page_type is not None:
             self.extract_data()
 
+
     def extract_data(self, key: str = None, keys_only: bool = False) -> Union[tuple[str, list[ReplacementType], PlanPreview], dict[list[ReplacementType]], None]:
         '''Führt die Funktionen für den jeweiligen Websitetypen aus'''
         self.refresh_page()
@@ -69,6 +98,7 @@ class Page:
             return None
         elif self.page_type == 'untis-html':
             return self.parse_untis_html(key, keys_only)
+
 
     def parse_untis_html(self, key: str = None, keys_only: bool = False) -> Union[tuple[str, list[ReplacementType], PlanPreview], dict[list[ReplacementType]], None]:
         '''Extrahiert die Klassen & Links aus der Webseite'''
@@ -107,7 +137,7 @@ class Page:
                     continue
 
     def parse_untis_html_table(self, key, link, single: bool = True) -> tuple[list[ReplacementType], PlanPreview]:
-        '''Extrahiert den Vertretungsplan für die jeweilige Klasse'''
+        '''Extrahiert den Untis Vertretungsplan für die jeweilige Klasse'''
         # den Link zum Plan konstruieren
         if link.count('/') == 0:  # deal with relative Links
             link = self.url.rsplit('/', 1)[0] + '/' + link
@@ -145,6 +175,12 @@ class Page:
         self.previews[key] = self.get_plan_preview(key)
         return None
 
+    def parse_dsb_html(self, columns: list[str], inline_class: bool = True):
+        '''Extrahiert den DSBMobile Vertretungsplan für ganze Schule'''
+
+        pass
+
+
     def get_plan_preview(self, key: str) -> PlanPreview:
         '''Produziert die Preview für den Vertretungsplan'''
         plan_img_url: str = self.database.get_plan(key, self.times[key])
@@ -175,21 +211,29 @@ class Page:
 
         buf = io.BytesIO(imgkit.from_string(html_code, False, **config))
         buf.seek(0)
+
         return File(buf, filename=filename)
+
 
     def get_plan_for_class(self, key: str) -> tuple[str, list[ReplacementType], PlanPreview]:
         '''Gibt den Vertretungsplan der gegebenen Klasse zurück'''
         return self.extract_data(key)
+
 
     def get_plan_for_all(self) -> tuple[dict[str, list[ReplacementType]], dict[PlanPreview]]:
         '''Gibt den Vertretungsplan für alle Klassen der Seite zurück!'''
         self.extract_data()
         return self.replacements, self.previews
 
+
     def refresh_page(self):
         '''Url abfragen, Code laden!'''
-        with urllib.request.urlopen(self.url) as web_page:
-            self.page = html.parse(web_page)
+        if self.page_type == UNTIS_HTML:
+            with urllib.request.urlopen(self.url) as web_page:
+                self.page = html.parse(web_page)
+        elif self.page_type() == DSB_MOBILE:
+            pass
+
 
     def get_classes(self) -> list:
         '''Gibt alle Klassen mit Vertretungen zurück'''
