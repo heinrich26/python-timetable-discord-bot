@@ -22,10 +22,12 @@ class ImageDatabase:
             self.cursor.execute(
                 'CREATE TABLE plans (key text, link text, date text)')
 
-    def get_icon(self, key: str) -> Union[str, discord.Embed]:
+    def get_icon(self, key: str) -> Union[str, discord.File]:
         '''Request an Icon from the database'''
+        key = key.replace(' - ', '-')
+
         self.cursor.execute(
-            'SELECT link FROM icons WHERE key = ?', [f'{key}_icon'])
+            'SELECT link FROM icons WHERE key = ?', [f"{key}_icon"])
         link = self.cursor.fetchone()
         self.cursor = self.database.cursor()
 
@@ -33,7 +35,7 @@ class ImageDatabase:
         if link is None:
             img = Image.new("RGBA", (IMG_RES, IMG_RES), (0, 0, 0, 0))
             font = ImageFont.truetype(
-                "fonts/arialrounded.ttf", int(105 * (4 / (len(key) - key.count('.')))))
+                "fonts/arialrounded.ttf", min(int(105 * (5 / (len(key) - key.count('.')))), 210))
 
             draw = ImageDraw.Draw(img)
             draw.text((IMG_RES / 2, IMG_RES / 2), key,
@@ -42,7 +44,7 @@ class ImageDatabase:
             buf = io.BytesIO()
             img.save(buf, format='PNG')
             buf.seek(0)
-            file = discord.File(buf, filename=f'{key}_icon.png')
+            file = discord.File(buf, filename=f"{key.replace(' ', '_')}_icon.png")
 
             return file
         return link[0]

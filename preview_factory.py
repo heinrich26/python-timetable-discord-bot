@@ -1,13 +1,35 @@
 import codecs
 import os
+import json
 from typing import Final
-from discord import Embed, Colour
+from discord import Embed, Color
 from replacement_types import ReplacementType
+from attachment_database import ImageDatabase
+
+# Read the Timetable Data
+with open('pages.json', 'r', encoding='utf-8') as page_json:
+    PAGES: Final[dict] = json.loads(page_json.read())['keys']
+
+# Keys for the Timetable Types
+UNTIS_HTML: Final = 0
+DSB_MOBILE: Final = 1
 
 REPLACED: Final = ('vertretung', 'betreuung')
+OMITTED: Final = ('entfall', 'eva', 'aufgaben')
+ROOM_REPLACEMENT: Final = ('raumvertretung', 'raumänderung')
+EARLIER: Final = ('vorverlegt')
 
-FONT_A = os.path.join(os.getcwd(), 'fonts/arialrounded.ttf').replace('\\', '/')
-FONT_B = os.path.join(os.getcwd(), 'fonts/Arial_Rounded_MT_ExtraBold.ttf').replace('\\', '/')
+event_types = (
+    (REPLACED, Color.blue()),
+    (OMITTED, Color.red()),
+    (ROOM_REPLACEMENT, Color.orange()),
+    (EARLIER, Color.green())
+)
+
+DEFAULT_FOOTER = {'text': 'Alle Angaben ohne Gewähr! Aber mit Gewehr. '}
+
+FONT_A: Final = os.path.join(os.getcwd(), 'fonts/arialrounded.ttf').replace('\\', '/')
+FONT_B: Final = os.path.join(os.getcwd(), 'fonts/Arial_Rounded_MT_ExtraBold.ttf').replace('\\', '/')
 
 STYLESHEET = ('''<style>
 @font-face {
@@ -77,10 +99,19 @@ tr.canceled {
 </style>''')
 
 
+def get_color(event_type: str) -> Color:
+    '''Determines the color from the given Event Type'''
+    for event in event_types:
+        if event_type.lower() in event[0]:
+            return event[1]
+        continue
+
+    return Color.dark_red()
+
 
 # splits a List into Sublists with len() <= n
 def chunks(items: list, n: int):
-    """Yield successive n-sized chunks from lst."""
+    '''Yield successive n-sized chunks from the given list.'''
     for i in range(0, len(items), n):
         yield items[i:i + n]
 
@@ -91,19 +122,65 @@ def sort_items(replacements: list[ReplacementType]) -> list[ReplacementType]:
 
 def create_embed(replacement: ReplacementType) -> Embed:
     '''Creates an Embed Tile for a Replacement'''
+    subject: str = replacement.get('subject')
     replacer: str = replacement.get('replacing_teacher')
     info: str = replacement.get('info')
     room: str = replacement.get('room')
-    repl_type: str = replacement['type_of_replacement']
-    desc: str = (replacement.get('subject', '') +
-                 f"({'' if replacer is None else (replacer + ' ')}~~{replacement['teacher']}~~)" +
-                 f"{' in ' + room if room is not None else ''}" +
-                 ('\n' + info) if info is not None else '')
+    repl_type: str = replacement.get('type_of_replacement', 'Info')
+
+    desc: str = (subject + ' ') if subject is not None else ''
+    desc += f"({'' if replacer is None else ('**' + replacer + '** ')}~~{replacement['teacher']}~~)"
+    desc += f"{' in `' + room + '`' if room is not None else ''}"
+    desc += ('\n' + info) if info is not None else ''
+    
     return Embed(title=repl_type,
                  description=desc,
-                 colour=Colour.blue() if repl_type in REPLACED
-                 else Colour.magenta())
+                 color=get_color(repl_type))
 
+def create_vplan_message(replacements: list[ReplacementType], class_: str,
+                         database: ImageDatabase, date: str = None) -> list[dict]:
+    message: dict = {
+        'content': f"**Vertretungsplan für die {class_}**\n",
+        'embeds': [],
+        'files': []
+    }
+
+    if replacements is None or len(replacements) == 0:
+        message['content'] += '\n\nOooaah, es sieht so aus als hättest du heute keine Vertretung! :('
+
+    messages: list[dict] = [message]
+
+    embed_count: int = 0
+    lessons: dict = {}
+    for replacement in replacements:
+        embed = create_embed(replacement)
+
+
+        if embed_count != 10:
+            messages[-1]['embeds'].append(embed)
+            embed_count += 1
+        else:
+            messages[-1]['embeds'][-1].set_footer(**DEFAULT_FOOTER)
+            messages.append({'embeds': [embed], 'files':[]})
+            embed_count = 1
+
+
+        lesson: str = replacement['lesson']
+        if not lesson in lessons:
+            thumb = database.get_icon(lesson)
+        else:
+            thumb = lessons[lesson]
+
+        if isinstance(thumb, str):
+            messages[-1]['embeds'][-1].set_thumbnail(url=thumb)
+        else:
+            messages[-1]['embeds'][-1].set_thumbnail(url=f'attachment://{thumb.filename}')
+            if not thumb in messages[-1]['files']:
+                messages[-1]['files'].append(thumb)
+
+    messages[-1]['embeds'][-1].set_footer(**DEFAULT_FOOTER)
+
+    return messages
 
 # Splits the Replacements and sorts them
 def prepare_replacements(replacements: list[ReplacementType]) -> list[list[ReplacementType]]:
@@ -115,20 +192,22 @@ def wrap_tag(code: str, tag: str = 'div', sclass=None, **kwargs) -> str:
     '''Surrounds the given String with the given Tag'''
     if sclass is not None:
         kwargs['class'] = sclass
+
     attrs = ' ' + \
             ' '.join([f"{kv[0]}='{str(kv[1])}'" for kv in kwargs.items()]) \
             if kwargs else ''
+
     return f"<{tag + attrs}>{str(code)}</{tag}>"
 
 
 
 def create_replacement_tile(replacement: ReplacementType) -> str:
-    '''Creates on HTML Row for a replacement'''
+    '''Creates a HTML Row for a replacement'''
     teacher: str = replacement['teacher']
     replacer: str = replacement.get('replacing_teacher')
     info: str = replacement.get('info_text')
     room: str = replacement.get('room')
-    repl_type: str = replacement['type_of_replacement']
+    repl_type: str = replacement.get('type_of_replacement', 'Info')
     desc: str = replacement.get('subject', '') + \
                  f" ({'' if replacer is None else (replacer + ' ')}{wrap_tag(teacher, 's') if teacher != replacer else ''})" + \
                  f"{' in ' + room if room is not None else ''}" + \

@@ -1,42 +1,35 @@
+'''Parser for various Timetables'''
+
 import urllib.request
 import os
 import platform
 import io
+import json
 from itertools import zip_longest
 from typing import Union, Final
+from datetime import datetime
 import imgkit
 from discord import File
 from lxml import html
 from preview_factory import create_html_preview
 from replacement_types import ReplacementType, PlanPreview
 from attachment_database import ImageDatabase
-
-UNTIS_HTML: Final = 'untis-html'
-DSB_MOBILE: Final = 'dsb-mobile'
+from dsbapi import DSBApi
 
 
-# die Webseitentypen mit bekannten URLs
-PAGES: Final = {
-    UNTIS_HTML: ['https://www.lilienthal-gymnasium-berlin.de/interna/vplan/Druck_Kla.htm'],
-    DSB_MOBILE: ['https://willi-graf-gymnasium.de/']
-}
+# Read the Timetable Data
+with open('pages.json', 'r', encoding='utf-8') as page_json:
+    PAGES: Final[dict] = json.loads(page_json.read())['keys']
 
-UNTIS_HTML_KEYS: Final = ('lesson', 'teacher', 'subject', 'replacing_teacher',
-                          'room', 'info_text', 'type_of_replacement')
+# Keys for the Timetable Types
+UNTIS_HTML: Final = 0
+DSB_MOBILE: Final = 1
 
-DSB_MOBILE_KEYS: Final = {
-    'https://willi-graf-gymnasium.de/': {
-        'keys': ('lesson', 'replacing_teacher', 'teacher', 'subject', 'room', 'info_text'),
-        'event_cases': {
-            'Vorverlegt': ['vorverlegt', 'vorziehung', 'vorgezogen'],
-            'Raumänderung': ['raumänderung', 'raumvertretung'],
-            'Vertretung': ['vertretung'],
-            'Entfall': ['entfällt', 'fällt aus'],
-            'Aufgaben': ['aa in', 'aa von']
-        },
-        'id': 'willi'
-    } # ... more DSB Schools, meeeh
-}
+DEFAULT_URL: Final = tuple(PAGES.keys())[0]
+
+DEFAULT_MAPPER: Final = ('type', 'class', 'lesson','subject', 'room',
+                         'new_subject', 'new_teacher', 'teacher')
+
 
 # construct the absolute path for the fonts
 FONT_A = os.path.join(
@@ -44,21 +37,14 @@ FONT_A = os.path.join(
 FONT_B = os.path.join(
     os.getcwd(), 'fonts/arialrounded.woff2').replace('\\', '/')
 
-# ensures existance of the cache directory
-IMG_CACHE_PATH = "./img_cache"
 
 
-def check_cache_dir():
-    '''Ensures that the Cache directory exists'''
-    if not os.path.exists(IMG_CACHE_PATH):
-        os.mkdir(IMG_CACHE_PATH)
-
-def load_credentials(path: str, id: str):
+def load_credentials(id: str):
     uname = os.environ.get(f'{id}_uname')
     if uname is not None:
         return uname, os.environ.get(f'{id}_pw')
 
-    with open(path, encoding='utf-8', mode='r') as file:
+    with open(f'secret_{id}', encoding='utf-8', mode='r') as file:
         uname, password = file.readlines()[:2]
 
     return uname.strip(), password.strip()
@@ -69,7 +55,7 @@ class Page:
     '''Klasse für Vertetungsplan Webseiten
     Extrahiert Vertretungen & produziert Previews'''
 
-    def __init__(self, url: str = PAGES['untis-html'][0], database: ImageDatabase = None):
+    def __init__(self, url: str = DEFAULT_URL, database: ImageDatabase = None):
         self.url: Final = url
 
         self.replacements: dict = {}
@@ -78,14 +64,15 @@ class Page:
 
         self.database = database
 
-        check_cache_dir()
+        self.page_struct: dict = PAGES.get(url)
+        if self.page_struct is None:
+            raise KeyError(url)
+
+        self.mapper: tuple = self.page_struct.get('mapper', DEFAULT_MAPPER)
+
 
         # den Websitetypen bestimmen
-        self.page_type: str = None
-        for page_item in PAGES.items():
-            if url in page_item[1]:
-                self.page_type = page_item[0]
-                break
+        self.page_type: int = self.page_struct['id']
 
         if self.page_type is not None:
             self.extract_data()
@@ -96,8 +83,10 @@ class Page:
         self.refresh_page()
         if self.page_type is None:
             return None
-        elif self.page_type == 'untis-html':
+        elif self.page_type == UNTIS_HTML:
             return self.parse_untis_html(key, keys_only)
+        elif self.page_type == DSB_MOBILE:
+            return self.parse_dsb_entries(key, keys_only)
 
 
     def parse_untis_html(self, key: str = None, keys_only: bool = False) -> Union[tuple[str, list[ReplacementType], PlanPreview], dict[list[ReplacementType]], None]:
@@ -130,7 +119,7 @@ class Page:
         # die Vertretungen für die alle Klassen ermitteln
         for kv in data_cells.items():
             self.parse_untis_html_table(*kv, False)
-        
+
 
         # nicht mehr vorkommene Elemente löschen
         if len(data_cells) != len(self.replacements):
@@ -141,6 +130,7 @@ class Page:
                 else:
                     continue
 
+
     def parse_untis_html_table(self, key, link, single: bool = True) -> tuple[list[ReplacementType], PlanPreview]:
         '''Extrahiert den Untis Vertretungsplan für die jeweilige Klasse'''
         # den Link zum Plan konstruieren
@@ -148,7 +138,7 @@ class Page:
             link = self.url.rsplit('/', 1)[0] + '/' + link
         with urllib.request.urlopen(link) as web_page:
             page = html.parse(web_page)
-  
+
 
         # Abfragen, ob der Plan neuer ist als der in unserer Datenbank
         time_data = page.xpath(
@@ -170,10 +160,10 @@ class Page:
                            if not item.text_content().strip('\n ') in none_cases else None
                            for item in event.xpath('(.//td)[position()>1]')]
             replacement: ReplacementType = {k:v for k, v in
-                dict(zip_longest(UNTIS_HTML_KEYS, cells)).items() if v is not None}
-                
-            
-                
+                dict(zip_longest(self.mapper, cells)).items() if v is not None}
+
+
+
 
             self.replacements[key].append(replacement)
 
@@ -183,15 +173,57 @@ class Page:
         self.previews[key] = self.get_plan_preview(key)
         return None
 
-    def parse_dsb_html(self, columns: list[str], inline_class: bool = True):
+
+    def parse_dsb_entries(self, key: str, keys_only: bool):
         '''Extrahiert den DSBMobile Vertretungsplan für ganze Schule'''
+        FORMAT: str = '%d.%m.%Y'
+        plan_dates: list = [datetime.strptime(day[0]['date'], FORMAT) for day in self.dsbentries]
 
-        pass
+        plan = self.dsbentries[plan_dates.index(max(plan_dates))]
+        plan_updated = plan[0]['updated']
+
+        if self.times.get('all') != plan_updated:
+            if not 'type_of_replacement' in self.mapper:
+                plan = self.parse_type_from_dsb_info(plan)
 
 
-    def get_plan_preview(self, key: str) -> PlanPreview:
+            self.replacements.clear()
+
+            for event in plan:
+                class_ = event.pop('class')
+                if not class_ in self.replacements:
+                    self.replacements[class_] = [event]
+                else:
+                    self.replacements[class_].append(event)
+
+            self.times['all'] = plan_updated
+
+
+
+        if keys_only:
+            return self.replacements.keys()
+
+
+        # Vplan für einzelne Klasse zurückgeben
+        if key is not None:
+            key_dict = {item.lower(): item for item in self.replacements.keys()}
+
+            if key_dict is None: return None
+
+            key: str = key_dict.get(key.lower())
+
+            if key is None: return None
+
+
+            return key, self.replacements.get(key), self.get_plan_preview(key, 'all')
+
+        for key in self.replacements:
+            self.previews[key] = self.get_plan_preview(key, 'all')
+
+
+    def get_plan_preview(self, key: str, time_key: str = None) -> PlanPreview:
         '''Produziert die Preview für den Vertretungsplan'''
-        plan_img_url: str = self.database.get_plan(key, self.times[key])
+        plan_img_url: str = self.database.get_plan(key, self.times[key] if time_key is None else time_key)
         if plan_img_url is not None:
             self.previews[key] = plan_img_url  # put the value to the dict
             return plan_img_url
@@ -239,16 +271,52 @@ class Page:
         if self.page_type == UNTIS_HTML:
             with urllib.request.urlopen(self.url) as web_page:
                 self.page = html.parse(web_page)
-        elif self.page_type() == DSB_MOBILE:
-            pass
+        elif self.page_type == DSB_MOBILE:
+            if not hasattr(self, 'dsbclient'):
+                self.dsbclient = DSBApi(*load_credentials(self.page_struct['id']),
+                                   tablemapper=self.mapper,
+                                   inline_header=self.page_struct.get('inline_header', False))
+
+            # refresh Entries
+            self.dsbentries = self.dsbclient.fetch_entries()
+
+
 
 
     def get_classes(self) -> list:
         '''Gibt alle Klassen mit Vertretungen zurück'''
         return self.extract_data(keys_only=True)
 
+    def parse_type_from_dsb_info(self, events: list[dict]):
+        for event in events:
+            if event.get('info_text') is None:
+                continue
+
+            info_text = event['info_text']
+            lower_info: str = event['info_text'].casefold()
+            for case, values in self.page_struct['event_cases'].items():
+                for value in values:
+                    if lower_info == value:
+                        event.pop('info_text')
+                    elif lower_info.startswith(value):
+                        if info_text[len(value)] == ',':
+                            event['info_text'] = info_text[len(value):].strip(' ,')
+                        elif len(lower_info) - len(value) == 1 and not lower_info[-1].isalnum():
+                            event.pop('info_text')
+                    else:
+                        continue
+
+                    event['type_of_replacement'] = case
+                    break
+                else:
+                    continue
+                break
+
+        return events
+
+
 
 if __name__ == '__main__':
-    example_page = Page(PAGES['untis-html'][0], database=ImageDatabase())
+    example_page = Page(DEFAULT_URL, database=ImageDatabase())
 
     print(example_page.replacements)

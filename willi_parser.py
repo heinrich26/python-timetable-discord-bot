@@ -55,6 +55,7 @@ def load_credentials(path: str):
 dsbclient = dsbapi.DSBApi(*load_credentials('willi_secret'), tablemapper=TABLE_KEYS,
                           inline_header=True)
 entries: list[dict[str, str]] = dsbclient.fetch_entries() # Rückgabe einer JSON Liste an Arrays
+print(entries)
 for day in entries:
     for event in parse_willi_infos(day):
         print(event)
