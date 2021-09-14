@@ -136,7 +136,7 @@ if __name__ == "__main__":
     check_last_modified()
 
     img_db = ImageDatabase()
-    liliplan = Page('https://willi-graf-gymnasium.de/', database=img_db)
+    liliplan = Page(DEFAULT_URL, database=img_db)
 
     client = Client()
 

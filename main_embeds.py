@@ -1,5 +1,4 @@
 import os
-import math
 from discord import Embed, Client, Message, Intents
 from discord_slash import SlashCommand
 
@@ -13,58 +12,6 @@ EMPTY_FIELD = {'name': '\u200b', 'value': '\u200b', 'inline': False}
 DEFAULT_FOOTER = {'text': 'Alle Angaben ohne Gewähr! Aber mit Gewehr. '}
 
 INVITE_LINK = 'https://discord.com/api/oauth2/authorize?client_id=489087343589064704&permissions=268594240&scope=bot'
-
-
-def mk_field(name: str = '\u200b', value: str = '\200b', inline: bool = True) -> dict:
-    '''Creates a discord.Field for the given strings'''
-    return {'name': name if name else '\u200b', 'value': value if value else '\u200b', 'inline': inline}
-
-
-# def row_for_class(repl_a: dict, repl_b: dict = None, header: bool = False, has_info: bool = False) -> list:
-#     '''Creates a list of Fields for the given replacements'''
-#     if header:
-#         row = [
-#             mk_field('**Stunde**', repl_a['lesson']),
-#             mk_field(
-#                 '**Lehrer**', f"~~{repl_a['teacher'] if repl_a.get('teacher') is not None else ''}~~{(' ' + repl_a['replacing_teacher']) if repl_a.get('replacing_teacher') is not None else ''}"),
-#             mk_field('**Fach**', repl_a['subject']),
-#             mk_field('**Raum**', repl_a['room']),
-#             # hier kommt das Info Feld hin, wenn es eins gibt!
-#             mk_field('**Art**', repl_a['type_of_replacement'])
-#         ]
-#         if has_info:
-#             row.insert(-1, mk_field('**Info**', repl_a['info_text']))
-#     else:
-#         row = []
-#         keys = ('lesson', 'subject', 'room',
-#                 'info_text', 'type_of_replacement')
-#         for i in range(0, 5):
-#             if i == 4 and not has_info:
-#                 continue
-#             key = keys[i]
-#             row.append(mk_field(repl_a[key], repl_b[key] if repl_b else None))
-#         row.insert(1, mk_field(f"~~{repl_a['teacher']}~~{(' ' + repl_a['replacing_teacher']) if repl_a.get('replacing_teacher') is not None else ''}",
-#                    None if not repl_b else f"~~{repl_b['teacher']}~~{(' ' + repl_b['replacing_teacher']) if repl_b.get('replacing_teacher') is not None else ''}"))
-#     return row
-
-
-# def class_vplan(usr_class: str, data: list) -> Embed:
-#     '''Creates an Embed for the given Replacements'''
-#     data = sorted(data, key=lambda e: e['lesson'])
-#     # Vertretungsplan für eine Klasse
-#     embedded_msg = Embed(
-#         title=f'Vertretungsplan der {usr_class}', description='Hier siehst du deine heutigen Vertretungen')
-#
-#     no_info = True in [True if 'info_text' in item else None for item in data]
-#     fields = row_for_class(data[0], header=True, has_info=not no_info)
-#     if len(data) != 1:
-#         for i in range(0, math.ceil((len(data) - 1) / 2)):
-#             fields.append(EMPTY_FIELD)
-#             fields.extend(row_for_class(
-#                 data[i * 2 + 1], data[i * 2 + 2] if i * 2 + 2 != len(data) else None, has_info=not no_info))
-#     for field in fields:
-#         embedded_msg.add_field(**field)
-#     return embedded_msg
 
 
 def build_plan(key: str, replacements: ReplacementType, preview: PlanPreview) -> tuple[str, list, Embed, tuple[bool, bool]]:
@@ -138,7 +85,7 @@ if __name__ == "__main__":
     check_last_modified()
 
     img_db = ImageDatabase()
-    liliplan = Page('https://www.lilienthal-gymnasium-berlin.de/interna/vplan/Druck_Kla.htm', database=img_db)
+    liliplan = Page(DEFAULT_URL, database=img_db)
 
     client = Client(intents=Intents.all())
     slash = SlashCommand(client, sync_commands=True)
