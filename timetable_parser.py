@@ -232,7 +232,7 @@ class Page:
         html_code: str = create_html_preview(self.replacements[key])
 
         filename = f'{key}_plan.png'
-        options: Final = {'quiet': None, 'width': 640, 'transparent': None,
+        options: Final = {'quiet': None, 'width': 500, 'transparent': None,
                           'enable-local-file-access': None, 'format': 'png',
                           'encoding': "UTF-8"}
 
