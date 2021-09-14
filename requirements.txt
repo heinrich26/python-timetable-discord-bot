@@ -3,3 +3,4 @@ lxml
 https://github.com/heinrich26/imgkit/archive/refs/tags/V1.2.2.1.zip
 pillow
 discord-py-slash-command
+https://github.com/heinrich26/DSBApi/archive/refs/heads/master.zip
