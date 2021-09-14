@@ -184,7 +184,7 @@ if __name__ == "__main__":
                     embedded_msg.set_footer(**DEFAULT_FOOTER)
 
                     # Send
-                    msg.channel.send(embed=embedded_msg)
+                    await msg.channel.send(embed=embedded_msg)
                 else:
                     for item in replacements.items():
                         key, files, embed, bools = build_plan(
