@@ -221,7 +221,7 @@ if __name__ == "__main__":
                 embedded_msg.set_footer(**DEFAULT_FOOTER)
 
                 # Send
-                msg.channel.send(embed=embedded_msg)
+                await msg.channel.send(embed=embedded_msg)
             else:
                 key, files, embed, bools = build_plan(*data)
                 sent_msg = await msg.channel.send(files=files, embed=embed)
