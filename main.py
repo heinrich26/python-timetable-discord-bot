@@ -69,7 +69,7 @@ def build_plan(key: str, replacements: ReplacementType, preview: PlanPreview) ->
     '''Returns everything needed to send a Replacementplan as Message for the given Data'''
     # embed = class_vplan(key, replacements)
     embed = Embed(title=f'**Vertretungsplan der {key}**',
-                  description='Hier siehst du deine heutigen Vertretungen:')
+                  description=f"Hier siehst du deine Vertretungen für den {liliplan.times.get(key), 'heutigen Tag'}:")
     embed.set_footer(**DEFAULT_FOOTER)
 
     files: list = []
