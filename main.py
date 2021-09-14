@@ -178,7 +178,7 @@ if __name__ == "__main__":
                    replacements == {}:  # awww, you dont have replacements! How sad!
                     # Assemble the Embed
                     embedded_msg = Embed(title='Vertretungsplan',
-                                         description='Hier siehst du deine heutigen Vertretungen')
+                                         description='Hier siehst du deine heutigen Vertretungen:')
                     embedded_msg.add_field(name='**Keine Vertretungen heute...**',
                                            value='\u200b', inline=False)
                     embedded_msg.set_footer(**DEFAULT_FOOTER)
@@ -215,7 +215,7 @@ if __name__ == "__main__":
             data = liliplan.get_plan_for_class(args[1])
             if data is None:
                 embedded_msg = Embed(title='Vertretungsplan',
-                                     description='Hier siehst du deine heutigen Vertretungen')
+                                     description='Hier siehst du deine heutigen Vertretungen:')
                 embedded_msg.add_field(name='**Keine Vertretungen heute...**',
                                        value='\u200b', inline=False)
                 embedded_msg.set_footer(**DEFAULT_FOOTER)
