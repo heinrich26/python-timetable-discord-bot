@@ -35,7 +35,7 @@ class ImageDatabase:
         if link is None:
             img = Image.new("RGBA", (IMG_RES, IMG_RES), (0, 0, 0, 0))
             font = ImageFont.truetype(
-                "fonts/arialrounded.ttf", min(int(105 * (5 / (len(key) - key.count('.')))), 210))
+                "fonts/arialrounded.ttf", min(int(105 * (4.5 / (len(key) - key.count('.')))), 210))
 
             draw = ImageDraw.Draw(img)
             draw.text((IMG_RES / 2, IMG_RES / 2), key,
