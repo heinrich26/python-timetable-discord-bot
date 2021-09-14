@@ -124,15 +124,16 @@ def create_embed(replacement: ReplacementType) -> Embed:
     '''Creates an Embed Tile for a Replacement'''
     subject: str = replacement.get('subject')
     replacer: str = replacement.get('replacing_teacher')
+    teacher: str = replacement.get('teacher')
     info: str = replacement.get('info')
     room: str = replacement.get('room')
     repl_type: str = replacement.get('type_of_replacement', 'Info')
 
     desc: str = (subject + ' ') if subject is not None else ''
-    desc += f"({'' if replacer is None else ('**' + replacer + '** ')}~~{replacement['teacher']}~~)"
+    desc += f"({'' if replacer is None else ('**' + replacer + ('** ' if teacher is not None else '**'))}~~{teacher}~~)"
     desc += f"{' in `' + room + '`' if room is not None else ''}"
     desc += ('\n' + info) if info is not None else ''
-    
+
     return Embed(title=repl_type,
                  description=desc,
                  color=get_color(repl_type))
@@ -209,7 +210,7 @@ def create_replacement_tile(replacement: ReplacementType) -> str:
     room: str = replacement.get('room')
     repl_type: str = replacement.get('type_of_replacement', 'Info')
     desc: str = replacement.get('subject', '') + \
-                 f" ({'' if replacer is None else (replacer + ' ')}{wrap_tag(teacher, 's') if teacher != replacer else ''})" + \
+                 f" ({'' if replacer is None else (replacer + ' ' if teacher is not None else replacer)}{wrap_tag(teacher, 's') if teacher != replacer else ''})" + \
                  f"{' in ' + room if room is not None else ''}" + \
                  ('<br>' + info if info is not None else '')
 
