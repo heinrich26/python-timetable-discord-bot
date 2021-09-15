@@ -141,7 +141,7 @@ def create_embed(replacement: ReplacementType) -> Embed:
 def create_vplan_message(replacements: list[ReplacementType], class_: str,
                          database: ImageDatabase, date: str = None) -> list[dict]:
     message: dict = {
-        'content': f"**Vertretungsplan für die {class_}**\n",
+        'content': f"**Vertretungsplan für die {class_}**\nHier siehst du deine Vertretungen für den {date.split(' ')[0] if date is not None else 'heutigen Tag'}:",
         'embeds': [],
         'files': []
     }
