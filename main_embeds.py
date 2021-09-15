@@ -198,10 +198,10 @@ if __name__ == "__main__":
                 # Send
                 msg.channel.send(embed=embedded_msg)
             else:
-                # key, files, embed, bools = build_plan(*data)
-                # sent_msg = await msg.channel.send(files=files, embed=embed)
-                # update_database_from_msg(key, sent_msg, bools)
-                await msg.channel.send('W.I.P')
+                key, files, embed, bools = build_plan(*data)
+                sent_msg = await msg.channel.send(files=files, embed=embed)
+                update_database_from_msg(key, sent_msg, bools)
+#                 await msg.channel.send('W.I.P') implement functionality for DSB Plans!
 
     client.run(os.environ['BOT_TOKEN'] if 'BOT_TOKEN' in os.environ else open(
         'token_secret', 'r', encoding='utf-8').readlines()[0])
