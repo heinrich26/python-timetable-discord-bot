@@ -93,7 +93,7 @@ class Page:
         '''Extrahiert die Klassen & Links aus der Webseite'''
         # 2. Tabelle auswählen
         tables = self.page.findall('//center//table')
-        if len(tables) == 1:
+        if len(tables) <= 1:
             return None
 
         # Daten aus den Zellen extrahieren
@@ -269,8 +269,11 @@ class Page:
     def refresh_page(self):
         '''Url abfragen, Code laden!'''
         if self.page_type == UNTIS_HTML:
-            with urllib.request.urlopen(self.url) as web_page:
-                self.page = html.parse(web_page)
+            try:
+                with urllib.request.urlopen(self.url) as web_page:
+                    self.page = html.parse(web_page)
+            except urllib.error.HTTPError:
+                self.page = html.parse('<html><body></body></html>')
         elif self.page_type == DSB_MOBILE:
             if not hasattr(self, 'dsbclient'):
                 self.dsbclient = DSBApi(*load_credentials(self.page_struct['id']),
