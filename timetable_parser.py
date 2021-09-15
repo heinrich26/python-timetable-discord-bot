@@ -145,7 +145,7 @@ class Page:
             '(((.//center//table)[1])/tr[2])/td[last()]')[0].text_content()
         if self.times.get(key) == time_data:
             # überspringen, vorherigen Wert zurückgeben
-            return self.replacements[key], self.previews[key]
+            return self.replacements[key], self.previews.get(key, self.get_plan_preview(key, time_data))
 
         self.times[key] = time_data  # Datum eintragen
         events = page.xpath('(.//center//table)[2]/tr[position()>1]')
