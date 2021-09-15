@@ -107,13 +107,13 @@ if __name__ == "__main__":
 
         if data is None or data[1] is {}:
             embedded_msg = Embed(title='Vertretungsplan',
-                                 description='Hier siehst du deine heutigen Vertretungen')
+                                 description='Hier siehst du deine heutigen Vertretungen:')
             embedded_msg.add_field(name='**Keine Vertretungen heute...**',
                                    value='\u200b', inline=False)
             embedded_msg.set_footer(**DEFAULT_FOOTER)
 
             # Send
-            context.send(embed=embedded_msg)
+            await context.send(embed=embedded_msg)
         else:
             for msg in create_vplan_message(data[1], data[0], img_db):
                 await context.send(**msg)
@@ -151,7 +151,7 @@ if __name__ == "__main__":
                    replacements == {}:  # awww, you dont have replacements! How sad!
                     # Assemble the Embed
                     embedded_msg = Embed(title='Vertretungsplan',
-                                         description='Hier siehst du deine heutigen Vertretungen')
+                                         description='Hier siehst du deine heutigen Vertretungen:')
                     embedded_msg.add_field(name='**Keine Vertretungen heute...**',
                                            value='\u200b', inline=False)
                     embedded_msg.set_footer(**DEFAULT_FOOTER)
