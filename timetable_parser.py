@@ -273,7 +273,7 @@ class Page:
                 with urllib.request.urlopen(self.url) as web_page:
                     self.page = html.parse(web_page)
             except urllib.error.HTTPError:
-                self.page = html.parse('<html><body></body></html>')
+                self.page = html.fromstring('<html><body></body></html>')
         elif self.page_type == DSB_MOBILE:
             if not hasattr(self, 'dsbclient'):
                 self.dsbclient = DSBApi(*load_credentials(self.page_struct['id']),
