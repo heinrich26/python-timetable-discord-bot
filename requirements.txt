@@ -5,4 +5,4 @@ pillow
 discord-py-slash-command
 requests
 beautifulsoup4
-https://github.com/heinrich26/DSBApi/archive/refs/heads/master.zip
+https://github.com/heinrich26/DSBApi/archive/refs/tags/v0.0.15.zip
