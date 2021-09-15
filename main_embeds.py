@@ -85,7 +85,7 @@ if __name__ == "__main__":
     check_last_modified()
 
     img_db = ImageDatabase()
-    liliplan = Page(DEFAULT_URL, database=img_db)
+    liliplan = Page('https://www.lilienthal-gymnasium-berlin.de/interna/vplan/Druck_Kla.htm', database=img_db)
 
     client = Client(intents=Intents.all())
     slash = SlashCommand(client, sync_commands=True)
