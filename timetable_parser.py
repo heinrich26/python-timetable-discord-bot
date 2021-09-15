@@ -10,7 +10,7 @@ from typing import Union, Final
 from datetime import datetime
 import imgkit
 from discord import File
-from lxml import html
+from lxml import html, etree
 from preview_factory import create_html_preview
 from replacement_types import ReplacementType, PlanPreview
 from attachment_database import ImageDatabase
@@ -271,11 +271,9 @@ class Page:
         if self.page_type == UNTIS_HTML:
             try:
                 with urllib.request.urlopen(self.url) as web_page:
-                    self.page = html.parse(web_page)
+                    self.page: etree.ElementTree = html.parse(web_page)
             except urllib.error.HTTPError:
-                self.page = html.document_fromstring('<html><body><center><table></table></center></body></html>')
-                
-                print(type(self.page), type(html.parse(urllib.request.urlopen('https://docs.python.org/3/library/urllib.request.html'))))
+                self.page: etree.ElementTree = etree.ElementTree(html.fromstring('<html><body><center></body></html>'))
         elif self.page_type == DSB_MOBILE:
             if not hasattr(self, 'dsbclient'):
                 self.dsbclient = DSBApi(*load_credentials(self.page_struct['id']),
