@@ -210,7 +210,7 @@ def create_replacement_tile(replacement: ReplacementType) -> str:
     room: str = replacement.get('room')
     repl_type: str = replacement.get('type_of_replacement', 'Info')
     desc: str = replacement.get('subject', '') + \
-                 f" ({'' if replacer is None else (replacer + ' ' if teacher is not None else replacer)}{wrap_tag(teacher, 's') if teacher != replacer else ''})" + \
+                 f" ({'' if replacer is None else (replacer + ' ' if teacher is not None else replacer)}{wrap_tag(teacher, 's') if teacher != replacer and teacher is not None else ''})" + \
                  f"{' in ' + room if room is not None else ''}" + \
                  ('<br>' + info if info is not None else '')
 
