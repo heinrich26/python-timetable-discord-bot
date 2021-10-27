@@ -204,7 +204,7 @@ def wrap_tag(code: str, tag: str = 'div', sclass=None, **kwargs) -> str:
 
 def create_replacement_tile(replacement: ReplacementType) -> str:
     '''Creates a HTML Row for a replacement'''
-    teacher: str = replacement['teacher']
+    teacher: str = replacement.get('teacher')
     replacer: str = replacement.get('replacing_teacher')
     info: str = replacement.get('info_text')
     room: str = replacement.get('room')
